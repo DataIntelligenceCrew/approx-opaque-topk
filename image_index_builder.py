@@ -7,6 +7,7 @@ from PIL import Image
 import torch
 from typing import List, Callable, Tuple, Dict
 import sys
+import gc
 
 
 def get_image_vectors_from_directory(directory_name: str, processors: Dict, model: torch.nn.Module, debug_print_: bool) -> List[Tuple[str, np.ndarray]]:
@@ -23,6 +24,7 @@ def get_image_vectors_from_directory(directory_name: str, processors: Dict, mode
     debug_print(debug_print_, "Using device: " + str(device))
     images_vectors = []
 
+    iter_ = 1
     for f in os.listdir(directory_name):
         if f.endswith('.png'):
             path: str = os.path.join(directory_name, f)
@@ -33,7 +35,11 @@ def get_image_vectors_from_directory(directory_name: str, processors: Dict, mode
                 vector = features.image_embeds_proj  # Extract low-dimensional feature vector only
                 images_vectors.append((f, vector))
                 debug_print(debug_print_, f"Generated vector for {f}")
-                torch.cuda.empty_cache()
+                if iter % 1000 == 0:
+                    torch.cuda.empty_cache()
+                    gc.collect()
+                    iter = 0
+                iter += 1
     return images_vectors
 
 

@@ -36,8 +36,8 @@ def get_image_vectors_from_directory(directory_name: str, processors: Dict, mode
                 images_vectors.append((f, vector))
                 debug_print(debug_print_, f"Generated vector for {f}")
                 if iter_ % 1000 == 0:
-                    torch.cuda.empty_cache()
                     gc.collect()
+                    torch.cuda.empty_cache()
                     iter_ = 0
                 iter_ += 1
     return images_vectors

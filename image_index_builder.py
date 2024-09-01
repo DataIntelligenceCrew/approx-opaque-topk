@@ -9,7 +9,7 @@ from typing import List, Callable, Tuple
 import sys
 
 
-def get_image_vectors_from_directory(directory_name: str, processor: Callable, model: torch.nn.Module) -> List[Tuple[str, np.ndarray]]:
+def get_image_vectors_from_directory(directory_name: str, processor: Callable, model: torch.nn.Module, debug_print_: bool) -> List[Tuple[str, np.ndarray]]:
     """
     Given a directory which holds some images, runs the images through a model to get their vector representations.
 
@@ -27,6 +27,7 @@ def get_image_vectors_from_directory(directory_name: str, processor: Callable, m
             image_tensor: np.ndarray = processor(image).unsqueeze(0)
             with torch.no_grad():
                 vector: np.ndarray = model.forward_features(image_tensor).cuda().numpy().flatten()
+                debug_print(debug_print_, f"Generated vector for {f}")
                 images_vectors.append((f, vector))
     return images_vectors
 
@@ -64,7 +65,7 @@ def construct_hac_index_images(directory_path: str, output_json_filename, n_clus
     debug_print(debug_print_true, "Model and preprocessor loaded")
 
     # Get the images' filenames and vectors
-    images_vectors = get_image_vectors_from_directory(directory_path, processor, model)
+    images_vectors = get_image_vectors_from_directory(directory_path, processor, model, debug_print_true)
     vectors = [images_vectors[1] for images_vectors in images_vectors]
     filenames = [images_vectors[0] for images_vectors in images_vectors]
     debug_print(debug_print_true, "Images processed and vectors extracted")

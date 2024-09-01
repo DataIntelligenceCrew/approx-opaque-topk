@@ -5,55 +5,69 @@ from sklearn.cluster import AgglomerativeClustering
 from lavis.models import load_model_and_preprocess
 from PIL import Image
 import torch
-from typing import List
+from typing import List, Callable, Tuple
+import sys
 
-def get_image_vectors_from_directory(directory_name, model, processor):
+
+def get_image_vectors_from_directory(directory_name: str, processor: Callable, model: torch.nn.Module) -> List[Tuple[str, np.ndarray]]:
+    """
+    Given a directory which holds some images, runs the images through a model to get their vector representations.
+
+    :param directory_name: The directory containing the images. The images are assumed to be .png and RGB.
+    :param processor: The preprocessor which processes the read Image into a tensor.
+    :param model: The model to use for feature extraction. Turns a processed image into a vector.
+    :returns: A list tuples of the form (filename, vector) where filename is the name of the image and vector is the
+              feature vector of the image.
+    """
     images_vectors = []
     for f in os.listdir(directory_name):
         if f.endswith('.png'):
-            path = os.path.join(directory_name, f)
-            image = Image.open(path).convert("RGB")
-            image_tensor = processor(image).unsqueeze(0)
+            path: str = os.path.join(directory_name, f)
+            image: Image = Image.open(path).convert("RGB")
+            image_tensor: np.ndarray = processor(image).unsqueeze(0)
             with torch.no_grad():
-                vector = model.forward_features(image_tensor).cuda().numpy().flatten()
+                vector: np.ndarray = model.forward_features(image_tensor).cuda().numpy().flatten()
                 images_vectors.append((f, vector))
+    return images_vectors
+
 
 def hierarchical_clustering(vectors: List[np.ndarray], n_clusters: int):
-    model = AgglomerativeClustering(n_clusters=n_clusters)
+    model: AgglomerativeClustering = AgglomerativeClustering(n_clusters=n_clusters)
     model.fit(vectors)
-    children = model.children_
+    children: np.ndarray = model.children_
 
-    def build_tree(node_id, current_depth):
-        if current_depth == depth:
+    def build_tree(node_id: int, current_depth: int):
+        if current_depth == n_clusters - 1:
             return {'elements': [node_id]}
         left_child, right_child = children[node_id]
         left_tree = build_tree(left_child, current_depth + 1)
         right_tree = build_tree(right_child, current_depth + 1)
         return {'children': [left_tree, right_tree]}
 
-    return build_tree(len(vectors) - 2, 0)
+    tree = build_tree(len(vectors) - 2, 0)
+    return tree
 
-def save_as_json(data, filename):
-    """Save the dictionary as a JSON file."""
+
+def save_as_json(data, filename: str):
+    """
+    Saves some data to a JSON file.
+    """
     with open(filename, 'w') as f:
         json.dump(data, f, indent=4)
 
-def main(directory, output_json, depth=3):
+
+def construct_hac_index_images(directory_path: str, output_json_filename, n_clusters: int):
     # Load the BLIP model and preprocessors
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model, processor = load_model_and_preprocess(name="blip-base", model_type="feature_extractor", is_eval=True, device=device)
 
-    # Scan the directory for images and process them
-    image_paths = get_png_images(directory)
-    vectors = []
-    filenames = []
-    for image_path in image_paths:
-        vector = get_image_vector(image_path, model, processor)
-        vectors.append(vector)
-        filenames.append(os.path.basename(image_path))
+    # Get the images' filenames and vectors
+    images_vectors = get_image_vectors_from_directory(directory_path, processor, model)
+    vectors = [images_vectors[1] for images_vectors in images_vectors]
+    filenames = [images_vectors[0] for images_vectors in images_vectors]
 
-    # Perform hierarchical clustering and truncate at the specified depth
-    tree = hierarchical_clustering(np.array(vectors), depth)
+    # Perform HAC
+    tree = hierarchical_clustering(vectors, n_clusters)
 
     # Replace indices with filenames in the tree structure
     def replace_indices_with_filenames(node):
@@ -66,10 +80,11 @@ def main(directory, output_json, depth=3):
     replace_indices_with_filenames(tree)
 
     # Save the tree as a JSON file
-    save_as_json(tree, output_json)
+    save_as_json(tree, output_json_filename)
 
 if __name__ == "__main__":
-    directory = "path/to/your/images"
-    output_json = "output.json"
-    depth = 3  # You can modify the depth as needed
-    main(directory, output_json, depth)
+    # Usage: python3 image_index_builder.py <directory_path> <output_json_filename> <n_clusters>
+    directory_path = sys.argv[1]
+    output_json_filename = sys.argv[2]
+    n_clusters = int(sys.argv[3])
+    construct_hac_index_images(directory_path, output_json_filename, n_clusters)

@@ -60,7 +60,7 @@ def construct_hac_index_images(directory_path: str, output_json_filename, n_clus
     debug_print(debug_print_true, f"Constructing HAC index for images in {directory_path} with {n_clusters} clusters")
     # Load the BLIP model and preprocessors
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model, processor = load_model_and_preprocess(name="blip-base", model_type="feature_extractor", is_eval=True, device=device)
+    model, processor = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=True, device=device)
     debug_print(debug_print_true, "Model and preprocessor loaded")
 
     # Get the images' filenames and vectors

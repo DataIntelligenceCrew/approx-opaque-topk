@@ -28,9 +28,11 @@ def get_image_vectors_from_directory(directory_name: str, processors: Dict, mode
             image: Image = Image.open(path).convert("RGB")
             image_tensor: np.ndarray = processors['eval'](image).unsqueeze(0).to(device)
             with torch.no_grad():
-                vector: np.ndarray = model.forward_features(image_tensor).cuda().numpy().flatten()
-                debug_print(debug_print_, f"Generated vector for {f}")
+                features = model.extract_features(image_tensor)({"image": image_tensor}, mode="image")
+                print(features)
+                vector = features.image_embeds_proj
                 images_vectors.append((f, vector))
+                debug_print(debug_print_, f"Generated vector for {f}")
     return images_vectors
 
 
@@ -63,7 +65,7 @@ def construct_hac_index_images(directory_path: str, output_json_filename, n_clus
     debug_print(debug_print_true, f"Constructing HAC index for images in {directory_path} with {n_clusters} clusters")
     # Load the BLIP model and preprocessors
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model, processors, _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=True, device=device)
+    model, processors, _ = load_model_and_preprocess(name="blip_feature_extractor", model_type="base", is_eval=True, device=device)
     debug_print(debug_print_true, "Model and preprocessor loaded")
 
     # Get the images' filenames and vectors

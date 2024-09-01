@@ -35,11 +35,11 @@ def get_image_vectors_from_directory(directory_name: str, processors: Dict, mode
                 vector = features.image_embeds_proj  # Extract low-dimensional feature vector only
                 images_vectors.append((f, vector))
                 debug_print(debug_print_, f"Generated vector for {f}")
-                if iter % 1000 == 0:
+                if iter_ % 1000 == 0:
                     torch.cuda.empty_cache()
                     gc.collect()
-                    iter = 0
-                iter += 1
+                    iter_ = 0
+                iter_ += 1
     return images_vectors
 
 

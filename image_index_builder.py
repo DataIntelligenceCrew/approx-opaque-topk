@@ -5,26 +5,28 @@ from sklearn.cluster import AgglomerativeClustering
 from lavis.models import load_model_and_preprocess
 from PIL import Image
 import torch
-from typing import List, Callable, Tuple
+from typing import List, Callable, Tuple, Dict
 import sys
 
 
-def get_image_vectors_from_directory(directory_name: str, processor: Callable, model: torch.nn.Module, debug_print_: bool) -> List[Tuple[str, np.ndarray]]:
+def get_image_vectors_from_directory(directory_name: str, processors: Dict, model: torch.nn.Module, debug_print_: bool) -> List[Tuple[str, np.ndarray]]:
     """
     Given a directory which holds some images, runs the images through a model to get their vector representations.
 
     :param directory_name: The directory containing the images. The images are assumed to be .png and RGB.
-    :param processor: The preprocessor which processes the read Image into a tensor.
+    :param processors: The preprocessor which processes the read Image into a tensor.
     :param model: The model to use for feature extraction. Turns a processed image into a vector.
     :returns: A list tuples of the form (filename, vector) where filename is the name of the image and vector is the
               feature vector of the image.
     """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    debug_print(debug_print_, "Using device: " + str(device))
     images_vectors = []
     for f in os.listdir(directory_name):
         if f.endswith('.png'):
             path: str = os.path.join(directory_name, f)
             image: Image = Image.open(path).convert("RGB")
-            image_tensor: np.ndarray = processor(image).unsqueeze(0)
+            image_tensor: np.ndarray = processors['Eval'](image).unsqueeze(0).to(device)
             with torch.no_grad():
                 vector: np.ndarray = model.forward_features(image_tensor).cuda().numpy().flatten()
                 debug_print(debug_print_, f"Generated vector for {f}")
@@ -61,11 +63,11 @@ def construct_hac_index_images(directory_path: str, output_json_filename, n_clus
     debug_print(debug_print_true, f"Constructing HAC index for images in {directory_path} with {n_clusters} clusters")
     # Load the BLIP model and preprocessors
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model, processor, _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=True, device=device)
+    model, processors, _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=True, device=device)
     debug_print(debug_print_true, "Model and preprocessor loaded")
 
     # Get the images' filenames and vectors
-    images_vectors = get_image_vectors_from_directory(directory_path, processor, model, debug_print_true)
+    images_vectors = get_image_vectors_from_directory(directory_path, processors, model, debug_print_true)
     vectors = [images_vectors[1] for images_vectors in images_vectors]
     filenames = [images_vectors[0] for images_vectors in images_vectors]
     debug_print(debug_print_true, "Images processed and vectors extracted")

@@ -22,6 +22,7 @@ def get_image_vectors_from_directory(directory_name: str, processors: Dict, mode
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     debug_print(debug_print_, "Using device: " + str(device))
     images_vectors = []
+
     for f in os.listdir(directory_name):
         if f.endswith('.png'):
             path: str = os.path.join(directory_name, f)
@@ -29,9 +30,10 @@ def get_image_vectors_from_directory(directory_name: str, processors: Dict, mode
             image_tensor: np.ndarray = processors['eval'](image).unsqueeze(0).to(device)
             with torch.no_grad():
                 features = model.extract_features({"image": image_tensor, "text_input": ""}, mode="image")
-                vector = features.image_embeds_proj
+                vector = features.image_embeds_proj  # Extract low-dimensional feature vector only
                 images_vectors.append((f, vector))
                 debug_print(debug_print_, f"Generated vector for {f}")
+                torch.cuda.empty_cache()
     return images_vectors
 
 

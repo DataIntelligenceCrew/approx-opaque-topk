@@ -29,7 +29,6 @@ def get_image_vectors_from_directory(directory_name: str, processors: Dict, mode
             image_tensor: np.ndarray = processors['eval'](image).unsqueeze(0).to(device)
             with torch.no_grad():
                 features = model.extract_features({"image": image_tensor, "text_input": ""}, mode="image")
-                print(features)
                 vector = features.image_embeds_proj
                 images_vectors.append((f, vector))
                 debug_print(debug_print_, f"Generated vector for {f}")

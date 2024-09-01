@@ -26,7 +26,7 @@ def get_image_vectors_from_directory(directory_name: str, processors: Dict, mode
         if f.endswith('.png'):
             path: str = os.path.join(directory_name, f)
             image: Image = Image.open(path).convert("RGB")
-            image_tensor: np.ndarray = processors['Eval'](image).unsqueeze(0).to(device)
+            image_tensor: np.ndarray = processors['eval'](image).unsqueeze(0).to(device)
             with torch.no_grad():
                 vector: np.ndarray = model.forward_features(image_tensor).cuda().numpy().flatten()
                 debug_print(debug_print_, f"Generated vector for {f}")

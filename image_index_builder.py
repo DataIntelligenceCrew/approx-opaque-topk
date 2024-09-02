@@ -105,7 +105,7 @@ def bisecting_kmeans(vectors: List[np.ndarray], filenames: List[str], k: int) ->
             children_priorities = [child['inertia'] for child in leaf_to_modify['children']]
             leaf_to_modify = leaf_to_modify['children'][children_priorities.index(max(children_priorities))]
         # Perform 2-means clustering on the chosen leaf
-        vectors_ = leaf_to_modify['elements']
+        vectors_ = leaf_to_modify['vectors']
         filenames_ = leaf_to_modify['filenames']
         n = len(vectors_)
         if n <= k:  # Base case: There are fewer elements than the number of clusters. Each cluster is a singleton.
@@ -117,12 +117,20 @@ def bisecting_kmeans(vectors: List[np.ndarray], filenames: List[str], k: int) ->
             child_vectors = [vectors_[j] for j in range(n) if cluster_assignments[j] == i]
             child_filenames = [filenames_[j] for j in range(n) if cluster_assignments[j] == i]
             inertia = np.mean([np.linalg.norm(v - kmeans.cluster_centers_[i]) for v in child_vectors])
-            children.append({"elements": child_filenames, 'inertia': inertia})
+            children.append({"vectors": child_filenames, 'inertia': inertia})
         leaf_to_modify['children'] = children
-        del leaf_to_modify['elements']
-    tree = {"elements": filenames, 'inertia': 0}
+        del leaf_to_modify['vectors']
+    tree = {"vectors": vectors, "elements": filenames, 'inertia': 0}
     for i in range(k - 1):
         bisecting_kmeans_inner(tree)
+    # Remove vectors from the tree
+    def remove_vectors(node):
+        if 'vectors' in node:
+            del node['vectors']
+        if 'children' in node:
+            for child in node['children']:
+                remove_vectors(child)
+    remove_vectors(tree)
     return tree
 
 

@@ -5,11 +5,8 @@ from sklearn.cluster import KMeans
 from lavis.models import load_model_and_preprocess
 from PIL import Image
 import torch
-from typing import List, Callable, Tuple, Dict
-import sys
+from typing import List, Tuple, Dict
 import gc
-import time
-import random
 
 
 def del_vars(to_del: List):
@@ -24,7 +21,7 @@ def free_memory(to_free: List):
     torch.cuda.empty_cache()
 
 
-def get_image_vectors_from_directory(directory_name: str, debug_: bool, batch_size: int = 25000) -> Tuple[List[np.ndarray], List[str]]:
+def get_image_vectors_from_directory(directory_name: str, batch_size: int = 25000) -> Tuple[List[np.ndarray], List[str]]:
     """
     Given a directory which holds some images, runs the images through a model to get their vector representations.
 
@@ -41,7 +38,7 @@ def get_image_vectors_from_directory(directory_name: str, debug_: bool, batch_si
     for f in os.listdir(directory_name):
         if f.endswith('.png'):
             if iter_ % 1000 == 0:
-                debug_print(debug_, f"Processing image {iter_}")
+                print(f"LOG:Processing image {iter_}")
             # Obtain image filename and processed vector
             path: str = os.path.join(directory_name, f)
             filenames.append(f)  # Save image filename
@@ -95,11 +92,11 @@ def hierarchical_kmeans(vectors: List[np.ndarray], filenames: List[str], max_dep
 
 
 def bisecting_kmeans(vectors: List[np.ndarray], filenames: List[str], k: int) -> Dict:
-    def bisecting_kmeans_inner(tree: Dict):
+    def bisecting_kmeans_inner(tree_: Dict):
         """
         Performs one iteration of bisecting k-means on a tree, which bisects the leaf with the highest inertia.
         """
-        leaf_to_modify = tree
+        leaf_to_modify = tree_
         # Find the child with the highest inertia to bisect
         while 'children' in leaf_to_modify:
             children_priorities = [child['inertia'] for child in leaf_to_modify['children']]
@@ -141,50 +138,3 @@ def save_as_json(data, filename: str):
     with open(filename, 'w') as f:
         json.dump(data, f, indent=4)
 
-
-def construct_hac_index_images(directory_path: str, output_json_filename, n_clusters: int, debug_print_true: bool):
-    debug_print(debug_print_true, f"Constructing HAC index for images in {directory_path} with {n_clusters} clusters")
-    # Load the BLIP model and preprocessors
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Get the images' filenames and vectors
-    images_vectors = get_image_vectors_from_directory(directory_path, debug_print_true)
-    vectors = [images_vectors[1] for images_vectors in images_vectors]
-    filenames = [images_vectors[0] for images_vectors in images_vectors]
-    debug_print(debug_print_true, "Images processed and vectors extracted")
-
-    # Perform HAC
-    tree = hierarchical_clustering(vectors, n_clusters)
-    debug_print(debug_print_true, "HAC performed")
-
-    # Replace indices with filenames in the tree structure
-    def replace_indices_with_filenames(node):
-        if 'elements' in node:
-            node['elements'] = [filenames[idx] for idx in node['elements']]
-        if 'children' in node:
-            for child in node['children']:
-                replace_indices_with_filenames(child)
-
-    replace_indices_with_filenames(tree)
-    debug_print(debug_print_true, "Replaced indices with filenames in the tree")
-
-    # Save the tree as a JSON file
-    save_as_json(tree, output_json_filename)
-    debug_print(debug_print_true, f"Saved the tree to {output_json_filename}")
-
-
-def debug_print(debug_print_true: bool, message: str):
-    if debug_print_true:
-        print(message)
-
-
-if __name__ == "__main__":
-    start_time = time.time()
-    # Usage: python3 image_index_builder.py <directory_path> <output_json_filename> <n_clusters> <DEBUG>
-    directory_path = sys.argv[1]
-    output_json_filename = sys.argv[2]
-    n_clusters = int(sys.argv[3])
-    debug_ = bool(sys.argv[4])
-    construct_hac_index_images(directory_path, output_json_filename, n_clusters, debug_)
-    end_time = time.time()
-    debug_print(debug_, "Time: " + str(end_time - start_time))

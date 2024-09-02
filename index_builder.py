@@ -114,7 +114,7 @@ def bisecting_kmeans(vectors: List[np.ndarray], filenames: List[str], k: int) ->
             child_vectors = [vectors_[j] for j in range(n) if cluster_assignments[j] == i]
             child_filenames = [filenames_[j] for j in range(n) if cluster_assignments[j] == i]
             inertia = np.mean([np.linalg.norm(v - kmeans.cluster_centers_[i]) for v in child_vectors])
-            children.append({"vectors": child_filenames, 'inertia': inertia, "filenames": child_filenames})
+            children.append({"vectors": child_vectors, 'inertia': inertia, "filenames": child_filenames})
         leaf_to_modify['children'] = children
         del leaf_to_modify['vectors']
     tree = {"vectors": vectors, "filenames": filenames, 'inertia': 0}

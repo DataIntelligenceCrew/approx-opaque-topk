@@ -92,25 +92,28 @@ def hierarchical_kmeans(vectors: List[np.ndarray], filenames: List[str], max_dep
 
 
 def bisecting_kmeans(vectors: List[np.ndarray], filenames: List[str], k: int) -> Dict:
-    def bisecting_kmeans_inner(tree_: Dict):
+    k_remain = k
+    def bisecting_kmeans_inner(tree_: Dict, k_remain: int):
         """
         Performs one iteration of bisecting k-means on a tree, which bisects the leaf with the highest inertia.
         """
         leaf_to_modify = tree_
         # Find the child with the highest inertia to bisect
         while 'children' in leaf_to_modify:
+            print(leaf_to_modify['children'])
             children_priorities = [child['inertia'] for child in leaf_to_modify['children']]
             leaf_to_modify = leaf_to_modify['children'][children_priorities.index(max(children_priorities))]
         # Perform 2-means clustering on the chosen leaf
         vectors_ = leaf_to_modify['vectors']
         filenames_ = leaf_to_modify['filenames']
         n = len(vectors_)
-        if n <= k:  # Base case: There are fewer elements than the number of clusters. Each cluster is a singleton.
-            leaf_to_modify['children'] = {"children": [{"elements": [filename]} for filename in filenames_]}
+        if n <= 2:  # Base case: There are fewer elements than the number of clusters. Each cluster is a singleton.
+            leaf_to_modify['children'] = [{"filenames": [filenames_[i]], 'inertia': 0.0, "vectors": [vectors_[i]]} for i in range(n)]
             del leaf_to_modify['vectors']
             del leaf_to_modify['filenames']
+            k_remain -= 1
         else:
-            kmeans = KMeans(n_clusters=k, init='k-means++', algorithm='elkan')
+            kmeans = KMeans(n_clusters=2, init='k-means++', algorithm='elkan')
             cluster_assignments = kmeans.fit_predict(vectors_)
             children = []
             for i in range(k):
@@ -121,10 +124,11 @@ def bisecting_kmeans(vectors: List[np.ndarray], filenames: List[str], k: int) ->
             leaf_to_modify['children'] = children
             del leaf_to_modify['vectors']
             del leaf_to_modify['filenames']
+            k_remain -= 1
     # Construct base tree, then perform k iterations of bisecting k-means
     tree = {"vectors": vectors, "filenames": filenames, 'inertia': 0}
-    for _ in range(k):
-        bisecting_kmeans_inner(tree)
+    while k_remain > 0:
+        bisecting_kmeans_inner(tree, k_remain)
     # Remove vectors from the tree, rename filenames to elements
     def remove_vectors(node):
         if 'vectors' in node:

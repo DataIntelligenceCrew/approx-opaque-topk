@@ -24,7 +24,7 @@ def free_memory(to_free: List):
     torch.cuda.empty_cache()
 
 
-def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, batch_size: int = 25000) -> Tuple[List[np.ndarray], List[str]]:
+def get_image_vectors_from_directory(directory_name: str, debug_: bool, batch_size: int = 25000) -> Tuple[List[np.ndarray], List[str]]:
     """
     Given a directory which holds some images, runs the images through a model to get their vector representations.
 
@@ -40,8 +40,8 @@ def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, ba
     model, processors, _ = load_model_and_preprocess(name="blip_feature_extractor", model_type="base", is_eval=True, device=device)
     for f in os.listdir(directory_name):
         if f.endswith('.png'):
-            if iter_ % 500 == 0:
-                print(iter_)
+            if iter_ % 1000 == 0:
+                debug_print(debug_, f"Processing image {iter_}")
             # Obtain image filename and processed vector
             path: str = os.path.join(directory_name, f)
             filenames.append(f)  # Save image filename

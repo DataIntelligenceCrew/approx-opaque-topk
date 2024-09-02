@@ -70,7 +70,7 @@ def free_memory(to_delete: list, debug=False):
         get_less_used_gpu(debug=True)
 
 
-def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, batch_size: int = 1000) -> List[Tuple[str, np.ndarray]]:
+def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, batch_size: int = 5000) -> List[Tuple[str, np.ndarray]]:
     """
     Given a directory which holds some images, runs the images through a model to get their vector representations.
 
@@ -97,7 +97,6 @@ def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, ba
                 features = model.extract_features({"image": image_tensor, "text_input": ""}, mode="image")
                 vector = features.image_embeds_proj  # Extract low-dimensional feature vector only
                 images_vectors.append((f, vector))
-                debug_print(debug_print_, f"Generated vector for {f}")
             if iter_ % batch_size == batch_size - 1:
                 model = None
                 processors = None

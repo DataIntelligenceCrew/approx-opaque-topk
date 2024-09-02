@@ -61,36 +61,69 @@ def get_image_vectors_from_directory(directory_name: str, debug_: bool, batch_si
     return vectors, filenames
 
 
-def bisecting_kmeans(vectors: List[np.ndarray], filenames: List[str], num_clusters: int) -> Dict:
+def hierarchical_kmeans(vectors: List[np.ndarray], filenames: List[str], max_depth: int, k: int) -> Dict:
     """
-    Perform bisecting k-means clustering on a set of vectors to cluster them into a dendrogram.
+    Perform traditional hierarchical k-means on a set of named vectors. The number of leaves is at most k^max_depth.
 
     :param vectors: A list of vectors to cluster.
     :param filenames: A list of filenames corresponding to the vectors.
-    :param num_clusters: The number of clusters to create.
+    :param max_depth: The maximum depth of the tree.
+    :param k: The number of children each node should have.
     :returns: A tree representing the clustering. Each intermediate node has a "children" field containing two child nodes.
               Each leaf node has an "elements" field containing the filenames of the vectors in that cluster.
     """
-    def kmeans_inner(vectors_: List[np.ndarray], filenames_: List[str], k: int) -> Dict:
+    def kmeans_inner(vectors_: List[np.ndarray], filenames_: List[str], current_depth: int) -> Dict:
         """
         Perform 2-means clustering on a set of vectors to cluster them into two sub-clusters.
         """
         n = len(vectors_)
-        if n <= k:  # Base case: There are less elements than the number of clusters. Each cluster is a singleton.
+        if n <= k:  # Base case: There are fewer elements than the number of clusters. Each cluster is a singleton.
             return {"children": [{"elements": filename} for filename in filenames_]}
-        if len(vectors_) == 1:  # Base case: There is only one cluster left. No need to perform clustering work.
-            return {"elements": filenames_}
+        if current_depth >= max_depth:  # Base case: The maximum depth has been reached.
+            return {"elements": filenames}
         # Normal case: Divide the existing cluster into two sub-clusters using k-means.
-        kmeans = KMeans(n_clusters=2, init='k-means++', algorithm='elkan')
+        kmeans = KMeans(n_clusters=k, init='k-means++', algorithm='elkan')
         cluster_assignments = kmeans.fit_predict(vectors_)
         children = []
         for i in range(2):
             child_vectors = [vectors_[j] for j in range(n) if cluster_assignments[j] == i]
             child_filenames = [filenames_[j] for j in range(n) if cluster_assignments[j] == i]
-            children.append(kmeans_inner(child_vectors, child_filenames, k-1))
+            children.append(kmeans_inner(child_vectors, child_filenames, current_depth + 1))
         return {"children": children}
 
-    return kmeans_inner(vectors, filenames, num_clusters)
+    return kmeans_inner(vectors, filenames, 0)
+
+
+def bisecting_kmeans(vectors: List[np.ndarray], filenames: List[str], k: int) -> Dict:
+    def bisecting_kmeans_inner(tree: Dict):
+        """
+        Performs one iteration of bisecting k-means on a tree, which bisects the leaf with the highest inertia.
+        """
+        leaf_to_modify = tree
+        # Find the child with the highest inertia to bisect
+        while 'children' in leaf_to_modify:
+            children_priorities = [child['inertia'] for child in leaf_to_modify['children']]
+            leaf_to_modify = leaf_to_modify['children'][children_priorities.index(max(children_priorities))]
+        # Perform 2-means clustering on the chosen leaf
+        vectors_ = leaf_to_modify['elements']
+        filenames_ = leaf_to_modify['filenames']
+        n = len(vectors_)
+        if n <= k:  # Base case: There are fewer elements than the number of clusters. Each cluster is a singleton.
+            return
+        kmeans = KMeans(n_clusters=k, init='k-means++', algorithm='elkan')
+        cluster_assignments = kmeans.fit_predict(vectors_)
+        children = []
+        for i in range(2):
+            child_vectors = [vectors_[j] for j in range(n) if cluster_assignments[j] == i]
+            child_filenames = [filenames_[j] for j in range(n) if cluster_assignments[j] == i]
+            inertia = np.mean([np.linalg.norm(v - kmeans.cluster_centers_[i]) for v in child_vectors])
+            children.append({"elements": child_filenames, 'inertia': inertia})
+        leaf_to_modify['children'] = children
+        del leaf_to_modify['elements']
+    tree = {"elements": filenames, 'inertia': 0}
+    for i in range(k - 1):
+        bisecting_kmeans_inner(tree)
+    return tree
 
 
 def save_as_json(data, filename: str):

@@ -77,14 +77,14 @@ def hierarchical_kmeans(vectors: List[np.ndarray], filenames: List[str], max_dep
         if n <= k:  # Base case: There are fewer elements than the number of clusters. Each cluster is a singleton.
             return {"children": [{"elements": [filename]} for filename in filenames_]}
         if current_depth >= max_depth:  # Base case: The maximum depth has been reached.
-            return {"elements": filenames}
+            return {"elements": filenames.copy()}
         # Normal case: Divide the existing cluster into two sub-clusters using k-means.
         kmeans = KMeans(n_clusters=k, init='k-means++', algorithm='elkan')
         cluster_assignments = kmeans.fit_predict(vectors_)
         children = []
-        for i in range(2):
-            child_vectors = [vectors_[j] for j in range(n) if cluster_assignments[j] == i]
-            child_filenames = [filenames_[j] for j in range(n) if cluster_assignments[j] == i]
+        for k_ in range(k):
+            child_vectors = [vectors_[j] for j in range(n) if cluster_assignments[j] == k_]
+            child_filenames = [filenames_[j] for j in range(n) if cluster_assignments[j] == k_]
             children.append(kmeans_inner(child_vectors, child_filenames, current_depth + 1))
         return {"children": children}
 
@@ -113,7 +113,7 @@ def bisecting_kmeans(vectors: List[np.ndarray], filenames: List[str], k: int) ->
             kmeans = KMeans(n_clusters=k, init='k-means++', algorithm='elkan')
             cluster_assignments = kmeans.fit_predict(vectors_)
             children = []
-            for i in range(2):
+            for i in range(k):
                 child_vectors = [vectors_[j] for j in range(n) if cluster_assignments[j] == i]
                 child_filenames = [filenames_[j] for j in range(n) if cluster_assignments[j] == i]
                 inertia = np.mean([np.linalg.norm(v - kmeans.cluster_centers_[i]) for v in child_vectors])

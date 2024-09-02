@@ -70,7 +70,7 @@ def free_memory(to_delete: list, debug=False):
         get_less_used_gpu(debug=True)
 
 
-def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, batch_size: int = 5000) -> List[Tuple[str, np.ndarray]]:
+def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, batch_size: int = 10000) -> List[Tuple[str, np.ndarray]]:
     """
     Given a directory which holds some images, runs the images through a model to get their vector representations.
 
@@ -88,6 +88,8 @@ def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, ba
     iter_ = 0
     for f in os.listdir(directory_name):
         if f.endswith('.png'):
+            if iter_ % 500 == 0:
+                print(iter_)
             if iter_ % batch_size == 0:
                 model, processors, _ = load_model_and_preprocess(name="blip_feature_extractor", model_type="base", is_eval=True, device=device)
             path: str = os.path.join(directory_name, f)
@@ -96,7 +98,12 @@ def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, ba
             with torch.no_grad():
                 features = model.extract_features({"image": image_tensor, "text_input": ""}, mode="image")
                 vector = features.image_embeds_proj  # Extract low-dimensional feature vector only
-                images_vectors.append((f, vector))
+                images_vectors.append((f, vector.cpu().detach().numpy()))
+                features = None
+                vector = None
+                image = None
+                image_tensor = None
+                path = None
             if iter_ % batch_size == batch_size - 1:
                 model = None
                 processors = None

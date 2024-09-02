@@ -8,6 +8,7 @@ import torch
 from typing import List, Callable, Tuple, Dict
 import sys
 import gc
+import time
 
 
 def get_less_used_gpu(gpus=None, debug=False):
@@ -70,7 +71,7 @@ def free_memory(to_delete: list, debug=False):
         get_less_used_gpu(debug=True)
 
 
-def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, batch_size: int = 10000) -> List[Tuple[str, np.ndarray]]:
+def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, batch_size: int = 25000) -> List[Tuple[str, np.ndarray]]:
     """
     Given a directory which holds some images, runs the images through a model to get their vector representations.
 
@@ -98,7 +99,7 @@ def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, ba
             with torch.no_grad():
                 features = model.extract_features({"image": image_tensor, "text_input": ""}, mode="image")
                 vector = features.image_embeds_proj  # Extract low-dimensional feature vector only
-                images_vectors.append((f, vector.cpu().detach().numpy()))
+                images_vectors.append((f, vector.cpu().detach().numpy().flatten()))
                 features = None
                 vector = None
                 image = None
@@ -113,20 +114,37 @@ def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, ba
     return images_vectors
 
 
-def hierarchical_clustering(vectors: List[np.ndarray], n_clusters: int):
-    model: AgglomerativeClustering = AgglomerativeClustering(n_clusters=n_clusters)
+def hierarchical_clustering(vectors: List[np.ndarray], max_depth: int) -> Dict:
+    model = AgglomerativeClustering(distance_threshold=0, n_clusters=None)
     model.fit(vectors)
-    children: np.ndarray = model.children_
+    children = model.children_
+    n_samples = len(vectors)
 
-    def build_tree(node_id: int, current_depth: int):
-        if current_depth == n_clusters - 1:
+    def build_tree(node_id: int, current_depth: int) -> Dict:
+        # If the current depth exceeds max_depth, return all elements of the subtree
+        if current_depth >= max_depth:
+            return {'elements': get_subtree_elements(node_id)}
+
+        # Leaf node (individual sample)
+        if node_id < n_samples:
             return {'elements': [node_id]}
-        left_child, right_child = children[node_id]
+
+        # Internal node (non-leaf)
+        left_child, right_child = children[node_id - n_samples]
         left_tree = build_tree(left_child, current_depth + 1)
         right_tree = build_tree(right_child, current_depth + 1)
+
         return {'children': [left_tree, right_tree]}
 
-    tree = build_tree(len(vectors) - 2, 0)
+    def get_subtree_elements(node_id: int) -> List[int]:
+        """ Recursively get all elements under this node in the dendrogram. """
+        if node_id < n_samples:
+            return [node_id]
+        left_child, right_child = children[node_id - n_samples]
+        return get_subtree_elements(left_child) + get_subtree_elements(right_child)
+
+    # Start building the tree from the root node
+    tree = build_tree(n_samples + len(children) - 1, 0)
     return tree
 
 
@@ -175,9 +193,12 @@ def debug_print(debug_print_true: bool, message: str):
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     # Usage: python3 image_index_builder.py <directory_path> <output_json_filename> <n_clusters> <DEBUG>
     directory_path = sys.argv[1]
     output_json_filename = sys.argv[2]
     n_clusters = int(sys.argv[3])
     debug_ = bool(sys.argv[4])
     construct_hac_index_images(directory_path, output_json_filename, n_clusters, debug_)
+    end_time = time.time()
+    debug_print(debug_, "Time: " + str(end_time - start_time))

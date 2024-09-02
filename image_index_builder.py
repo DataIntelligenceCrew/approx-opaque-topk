@@ -1,7 +1,7 @@
 import os
 import json
 import numpy as np
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import KMeans
 from lavis.models import load_model_and_preprocess
 from PIL import Image
 import torch
@@ -9,6 +9,7 @@ from typing import List, Callable, Tuple, Dict
 import sys
 import gc
 import time
+import random
 
 
 def del_vars(to_del: List):
@@ -23,73 +24,105 @@ def free_memory(to_free: List):
     torch.cuda.empty_cache()
 
 
-def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, batch_size: int = 25000) -> List[Tuple[str, np.ndarray]]:
+def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, batch_size: int = 25000) -> Tuple[List[np.ndarray], List[str]]:
     """
     Given a directory which holds some images, runs the images through a model to get their vector representations.
 
     :param directory_name: The directory containing the images. The images are assumed to be .png and RGB.
     :param processors: The preprocessor which processes the read Image into a tensor.
     :param model: The model to use for feature extraction. Turns a processed image into a vector.
-    :returns: A list tuples of the form (filename, vector) where filename is the name of the image and vector is the
-              feature vector of the image.
+    :returns: A list image vectors and a list of image filenames.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    debug_print(debug_print_, "Using device: " + str(device))
-    images_vectors = []
-
+    vectors, filenames = [], []
 
     iter_ = 0
+    model, processors, _ = load_model_and_preprocess(name="blip_feature_extractor", model_type="base", is_eval=True, device=device)
     for f in os.listdir(directory_name):
         if f.endswith('.png'):
             if iter_ % 500 == 0:
                 print(iter_)
-            if iter_ % batch_size == 0:
-                model, processors, _ = load_model_and_preprocess(name="blip_feature_extractor", model_type="base", is_eval=True, device=device)
+            # Obtain image filename and processed vector
             path: str = os.path.join(directory_name, f)
-            image: Image = Image.open(path).convert("RGB")
-            image_tensor: np.ndarray = processors['eval'](image).unsqueeze(0).to(device)
+            filenames.append(f)  # Save image filename
+            image: torch.Tensor = processors['eval'](Image.open(path).convert("RGB")).unsqueeze(0).to(device)
+            # Obtain image vector representation
             with torch.no_grad():
-                features = model.extract_features({"image": image_tensor, "text_input": ""}, mode="image")
+                features = model.extract_features({"image": image}, mode="image")
                 vector = features.image_embeds_proj  # Extract low-dimensional feature vector only
-                images_vectors.append((f, vector.cpu().detach().numpy().flatten()))
-            del_vars([features, vector, image, image_tensor, path])
-            if iter_ % batch_size == batch_size - 1:
+                vectors.append(vector.cpu().detach().numpy().flatten())  # Save image vector
+            # Free objects cached in GPU to avoid memory issues
+            del_vars([features, vector, image, image, path])
+            # Periodically empty GPU cache
+            if iter_ % batch_size == batch_size:
                 free_memory([model, processors])
+                model, processors, _ = load_model_and_preprocess(name="blip_feature_extractor", model_type="base", is_eval=True, device=device)
             iter_ += 1
-    return images_vectors
+    return vectors, filenames
 
 
-def hierarchical_clustering(vectors: List[np.ndarray], max_depth: int) -> Dict:
-    model = AgglomerativeClustering(distance_threshold=0, n_clusters=None)
-    model.fit(vectors)
-    children = model.children_
-    n_samples = len(vectors)
+def bisecting_kmeans_clustering(vectors: List[np.ndarray], names: List[str], max_depth: int, num_samples: int) -> Dict:
+    # Subsample the input list
+    subsample_indices = random.sample(range(len(vectors)), num_samples)
+    subsample_vectors = [vectors[i] for i in subsample_indices]
+    subsample_names = [names[i] for i in subsample_indices]
 
-    def build_tree(node_id: int, current_depth: int) -> Dict:
-        # If the current depth exceeds max_depth, return all elements of the subtree
-        if current_depth >= max_depth:
-            return {'elements': get_subtree_elements(node_id)}
+    centroids = []
 
-        # Leaf node (individual sample)
-        if node_id < n_samples:
-            return {'elements': [node_id]}
+    def build_tree(vectors: List[np.ndarray], names: List[str], current_depth: int) -> Dict:
+        # If the current depth exceeds max_depth, return all elements in the subtree
+        if current_depth >= max_depth or len(vectors) <= 1:
+            return {'elements': names}
 
-        # Internal node (non-leaf)
-        left_child, right_child = children[node_id - n_samples]
-        left_tree = build_tree(left_child, current_depth + 1)
-        right_tree = build_tree(right_child, current_depth + 1)
+        # Apply bisecting k-means
+        kmeans = KMeans(n_clusters=2)
+        kmeans.fit(vectors)
+        centroids.append(kmeans.cluster_centers_)
+
+        left_indices = [i for i in range(len(vectors)) if kmeans.labels_[i] == 0]
+        right_indices = [i for i in range(len(vectors)) if kmeans.labels_[i] == 1]
+
+        left_vectors = [vectors[i] for i in left_indices]
+        right_vectors = [vectors[i] for i in right_indices]
+        left_names = [names[i] for i in left_indices]
+        right_names = [names[i] for i in right_indices]
+
+        left_tree = build_tree(left_vectors, left_names, current_depth + 1)
+        right_tree = build_tree(right_vectors, right_names, current_depth + 1)
 
         return {'children': [left_tree, right_tree]}
 
-    def get_subtree_elements(node_id: int) -> List[int]:
-        """ Recursively get all elements under this node in the dendrogram. """
-        if node_id < n_samples:
-            return [node_id]
-        left_child, right_child = children[node_id - n_samples]
-        return get_subtree_elements(left_child) + get_subtree_elements(right_child)
+    # Build tree for subsample
+    tree = build_tree(subsample_vectors, subsample_names, 0)
 
-    # Start building the tree from the root node
-    tree = build_tree(n_samples + len(children) - 1, 0)
+    # Assign original elements to the leaves of the tree
+    def assign_elements_to_leaves(node: Dict, vector: np.ndarray, name: str):
+        if 'elements' in node:
+            node['elements'].append(name)
+        else:
+            left_centroid, right_centroid = node['children'][0]['centroid'], node['children'][1]['centroid']
+            left_dist = np.linalg.norm(vector - left_centroid)
+            right_dist = np.linalg.norm(vector - right_centroid)
+            if left_dist < right_dist:
+                assign_elements_to_leaves(node['children'][0], vector, name)
+            else:
+                assign_elements_to_leaves(node['children'][1], vector, name)
+
+    # Initialize elements field in leaf nodes
+    def initialize_elements_field(node: Dict):
+        if 'elements' in node:
+            node['elements'] = []
+        else:
+            initialize_elements_field(node['children'][0])
+            initialize_elements_field(node['children'][1])
+
+    # Initialize elements field for each leaf
+    initialize_elements_field(tree)
+
+    # Assign each original element to the appropriate leaf
+    for vector, name in zip(vectors, names):
+        assign_elements_to_leaves(tree, vector, name)
+
     return tree
 
 

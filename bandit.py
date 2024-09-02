@@ -111,7 +111,7 @@ class IndexLeaf:
         return self
 
     def to_dict(self) -> Dict:
-        return {"elements": self._children, "children": None}
+        return {"children": None, "metadata": self.metadata}
 
     def _initialize_ucb_metadata(self, params: Dict):
         init = params['init']
@@ -149,7 +149,7 @@ class IndexNode:
         return child.get_grandchild(grandchild_idx[1:])
 
     def to_dict(self) -> Dict:
-        return {"children": [child.to_dict() for child in self.children]}
+        return {"children": [child.to_dict() for child in self.children], "metadata": self.metadata}
 
     def initialize_metadata(self, algorithm: str, params: Dict):
         match algorithm:
@@ -231,6 +231,7 @@ def approx_top_k_bandit(index: IndexNode, k: int, scoring_fn: Callable, sampling
     time_start = time.time()
     itr = 0
     pq: LimitedPQ = LimitedPQ(k)
+    print("[")
     while True:
         # Check termination condition
         if isinstance(budget, int):
@@ -252,6 +253,17 @@ def approx_top_k_bandit(index: IndexNode, k: int, scoring_fn: Callable, sampling
         pq.insert(sample, score)
         # Update metadata over the index
         index.update(algorithm, selected_leaf_idx, score, itr)
+        # Print out iteration result
+        result = {
+            "iteration": itr,
+            "arm": selected_leaf_idx,
+            "sample_id": sample_id,
+            "score": score,
+            "pq": pq.get_heap(),
+            "index": index.to_dict()
+        }
+        print(json.dumps(result) + ",")
+    print("]")
     return pq.get_heap()
 
 
@@ -286,5 +298,15 @@ def select_leaf_arm_ucb(node: IndexNode) -> List[int]:
                 best_child_idx = idx
         return [best_child_idx] + select_leaf_arm_ucb(node.get_child_at(best_child_idx))
 
-def select_leaf_arm_epsgreedy(index: IndexNode, kth_best_score: float) -> List[int]:
-    pass
+def select_leaf_arm_epsgreedy(node: IndexNode, kth_best_score: float) -> List[int]:
+    if isinstance(node, IndexLeaf):
+        return []
+    elif isinstance(node, IndexNode):
+        children = node.children
+        max_gain = 0.0
+        best_child_idx = 0
+        for idx, child in enumerate(children):
+            gain = child.metadata['histogram'].expected_marginal_gain(kth_best_score)
+            if gain > max_gain:
+                best_child_idx = idx
+        return [best_child_idx] + select_leaf_arm_epsgreedy(node.get_child_at(best_child_idx), kth_best_score)

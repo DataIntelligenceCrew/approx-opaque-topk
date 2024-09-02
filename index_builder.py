@@ -77,7 +77,7 @@ def hierarchical_kmeans(vectors: List[np.ndarray], filenames: List[str], max_dep
         if n <= k:  # Base case: There are fewer elements than the number of clusters. Each cluster is a singleton.
             return {"children": [{"elements": [filename]} for filename in filenames_]}
         if current_depth >= max_depth:  # Base case: The maximum depth has been reached.
-            return {"elements": filenames.copy()}
+            return {"elements": filenames}
         # Normal case: Divide the existing cluster into two sub-clusters using k-means.
         kmeans = KMeans(n_clusters=k, init='k-means++', algorithm='elkan')
         cluster_assignments = kmeans.fit_predict(vectors_)

@@ -2,69 +2,86 @@ import json
 import sys
 import os
 import random
+from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-
+from scipy.cluster.hierarchy import dendrogram, linkage
 
 def load_json(json_file):
+    """Load the JSON data from the file."""
     with open(json_file, 'r') as f:
         return json.load(f)
 
+def build_linkage_matrix(node, node_list, index=0):
+    """Recursively build a linkage matrix and node list from the tree structure."""
+    if 'children' in node and node['children']:
+        for child in node['children']:
+            index = build_linkage_matrix(child, node_list, index)
+        node_id = len(node_list)
+        node_list.append({'id': node_id, 'elements': node.get('elements', [])})
+        node['id'] = node_id
+        for child in node['children']:
+            child_id = child['id']
+            Z.append([child_id, node_id, 1.0, len(node_list)])
+    else:
+        node_id = len(node_list)
+        node_list.append({'id': node_id, 'elements': node.get('elements', [])})
+        node['id'] = node_id
+    return index + 1
 
-def plot_dendrogram(node, ax, x=0, y=0, width=1, depth=0, max_depth=None):
-    """Recursive function to plot the dendrogram."""
-    if max_depth is None:
-        max_depth = get_max_depth(node)
-
-    num_children = len(node.get('children', []))
-    if num_children == 0:  # Leaf node
-        ax.text(x, y, f'{len(node["elements"])} elements', va='center', ha='center')
-        plot_leaf_images(node, ax, x, y - 0.05, width)
-        return x, x
-
-    left_x = x
-    for i, child in enumerate(node['children']):
-        child_x, child_x_end = plot_dendrogram(child, ax, left_x, y - 1, width / num_children, depth + 1, max_depth)
-        ax.plot([x, (child_x + child_x_end) / 2], [y, y - 1], c='k')
-        left_x = child_x_end + width / (2 * num_children)
-
-    return x - width / 2, left_x - width / 2
-
-
-def get_max_depth(node):
-    """Recursively calculate the maximum depth of the tree."""
-    if 'children' not in node:
-        return 0
-    return 1 + max(get_max_depth(child) for child in node['children'])
-
-
-def plot_leaf_images(node, ax, x, y, width):
+def plot_leaf_images(node_list, ax, leaf_label_func):
     """Plot images under the leaf nodes."""
-    sample_images = random.sample(node['elements'], min(len(node['elements']), sample_size))
-    for i, img_name in enumerate(sample_images):
-        img_path = os.path.join(directory_path, img_name)
-        image = mpimg.imread(img_path)
-        imagebox = OffsetImage(image, zoom=0.1)
-        ab = AnnotationBbox(imagebox, (x, y - i * 0.15), frameon=False, box_alignment=(0.5, 1))
-        ax.add_artist(ab)
-
+    ivl = ax.get_xticklabels()
+    for label in ivl:
+        label_index = int(label.get_text())
+        elements = node_list[label_index]['elements']
+        sample_images = random.sample(elements, min(len(elements), sample_size))
+        for i, img_name in enumerate(sample_images):
+            img_path = os.path.join(directory_path, img_name)
+            if os.path.isfile(img_path):
+                try:
+                    image = Image.open(img_path)
+                    image.thumbnail((30, 30), Image.ANTIALIAS)
+                    imagebox = OffsetImage(image, zoom=0.5)
+                    ab = AnnotationBbox(imagebox, (label.get_position()[0], -0.5 - i * 0.1), frameon=False)
+                    ax.add_artist(ab)
+                except Exception as e:
+                    print(f"Error loading image {img_name}: {e}")
+            else:
+                print(f"Image file {img_name} does not exist.")
 
 if __name__ == "__main__":
-    # Parse command-line arguments
+    if len(sys.argv) != 5:
+        print("Usage: python3 visualize_index.py /directory/path index_file.json sample_size output_filename.png")
+        sys.exit(1)
+
     directory_path = sys.argv[1]
     json_file = sys.argv[2]
     sample_size = int(sys.argv[3])
+    output_filename = sys.argv[4]
 
     # Load the JSON tree
-    tree = load_json(json_file)
+    try:
+        tree = load_json(json_file)
+    except Exception as e:
+        print(f"Error loading JSON file: {e}")
+        sys.exit(1)
 
-    # Set up the plot
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_axis_off()
+    # Create linkage matrix and node list
+    Z = []
+    node_list = []
+    build_linkage_matrix(tree, node_list)
 
-    # Plot the dendrogram
-    plot_dendrogram(tree, ax, width=10)
+    # Plot dendrogram using scipy
+    plt.figure(figsize=(10, 6))
+    ax = plt.gca()
+    dendrogram(Z, ax=ax, labels=[str(node['id']) for node in node_list], leaf_rotation=90, leaf_font_size=10)
 
-    # Show the plot
+    # Plot images under leaf nodes
+    plot_leaf_images(node_list, ax, leaf_label_func=None)
+
+    # Adjust the layout and save the figure
+    plt.tight_layout()
+    plt.savefig(output_filename, bbox_inches='tight')
     plt.show()

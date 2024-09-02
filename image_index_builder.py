@@ -70,7 +70,7 @@ def free_memory(to_delete: list, debug=False):
         get_less_used_gpu(debug=True)
 
 
-def get_image_vectors_from_directory(directory_name: str, processors: Dict, model: torch.nn.Module, debug_print_: bool) -> List[Tuple[str, np.ndarray]]:
+def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, batch_size: int = 1000) -> List[Tuple[str, np.ndarray]]:
     """
     Given a directory which holds some images, runs the images through a model to get their vector representations.
 
@@ -84,9 +84,12 @@ def get_image_vectors_from_directory(directory_name: str, processors: Dict, mode
     debug_print(debug_print_, "Using device: " + str(device))
     images_vectors = []
 
+
     iter_ = 1
     for f in os.listdir(directory_name):
         if f.endswith('.png'):
+            if iter_ % batch_size == 0:
+                model, processors, _ = load_model_and_preprocess(name="blip_feature_extractor", model_type="base", is_eval=True, device=device)
             path: str = os.path.join(directory_name, f)
             image: Image = Image.open(path).convert("RGB")
             image_tensor: np.ndarray = processors['eval'](image).unsqueeze(0).to(device)
@@ -95,11 +98,11 @@ def get_image_vectors_from_directory(directory_name: str, processors: Dict, mode
                 vector = features.image_embeds_proj  # Extract low-dimensional feature vector only
                 images_vectors.append((f, vector))
                 debug_print(debug_print_, f"Generated vector for {f}")
-                if iter_ % 5000 == 0:
-                    gc.collect()
-                    torch.cuda.empty_cache()
-                    next_gpu = get_less_used_gpu()
-                    device = torch.device("cuda:" + str(next_gpu) if torch.cuda.is_available() else "cpu")
+            if iter_ % batch_size == batch_size - 1:
+                model = None
+                processors = None
+                gc.collect()
+                torch.cuda.empty_cache()
             iter_ += 1
     return images_vectors
 
@@ -133,11 +136,9 @@ def construct_hac_index_images(directory_path: str, output_json_filename, n_clus
     debug_print(debug_print_true, f"Constructing HAC index for images in {directory_path} with {n_clusters} clusters")
     # Load the BLIP model and preprocessors
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model, processors, _ = load_model_and_preprocess(name="blip_feature_extractor", model_type="base", is_eval=True, device=device)
-    debug_print(debug_print_true, "Model and preprocessor loaded")
 
     # Get the images' filenames and vectors
-    images_vectors = get_image_vectors_from_directory(directory_path, processors, model, debug_print_true)
+    images_vectors = get_image_vectors_from_directory(directory_path, debug_print_true)
     vectors = [images_vectors[1] for images_vectors in images_vectors]
     filenames = [images_vectors[0] for images_vectors in images_vectors]
     debug_print(debug_print_true, "Images processed and vectors extracted")

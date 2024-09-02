@@ -8,27 +8,36 @@ import matplotlib.image as mpimg
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from scipy.cluster.hierarchy import dendrogram, linkage
 
+
 def load_json(json_file):
     """Load the JSON data from the file."""
     with open(json_file, 'r') as f:
         return json.load(f)
 
-def build_linkage_matrix(node, node_list, index=0):
+
+def build_linkage_matrix(node, node_list, current_id):
     """Recursively build a linkage matrix and node list from the tree structure."""
     if 'children' in node and node['children']:
-        for child in node['children']:
-            index = build_linkage_matrix(child, node_list, index)
-        node_id = len(node_list)
-        node_list.append({'id': node_id, 'elements': node.get('elements', [])})
-        node['id'] = node_id
-        for child in node['children']:
-            child_id = child['id']
-            Z.append([child_id, node_id, 1.0, len(node_list)])
+        left_id = current_id
+        current_id += 1
+        right_id = current_id
+        current_id += 1
+
+        # Recursively process children
+        left_id = build_linkage_matrix(node['children'][0], node_list, left_id)
+        right_id = build_linkage_matrix(node['children'][1], node_list, right_id)
+
+        # Internal node
+        new_id = len(node_list)
+        Z.append([left_id, right_id, 1.0, len(node_list)])
+        node_list.append({'id': new_id, 'elements': node.get('elements', [])})
+        return new_id
     else:
+        # Leaf node
         node_id = len(node_list)
         node_list.append({'id': node_id, 'elements': node.get('elements', [])})
-        node['id'] = node_id
-    return index + 1
+        return node_id
+
 
 def plot_leaf_images(node_list, ax, leaf_label_func):
     """Plot images under the leaf nodes."""
@@ -51,6 +60,7 @@ def plot_leaf_images(node_list, ax, leaf_label_func):
             else:
                 print(f"Image file {img_name} does not exist.")
 
+
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         print("Usage: python3 visualize_index.py /directory/path index_file.json sample_size output_filename.png")
@@ -68,10 +78,12 @@ if __name__ == "__main__":
         print(f"Error loading JSON file: {e}")
         sys.exit(1)
 
-    # Create linkage matrix and node list
+    # Initialize the linkage matrix and node list
     Z = []
     node_list = []
-    build_linkage_matrix(tree, node_list)
+
+    # Build the linkage matrix and node list
+    build_linkage_matrix(tree, node_list, current_id=0)
 
     # Plot dendrogram using scipy
     plt.figure(figsize=(10, 6))
@@ -84,4 +96,5 @@ if __name__ == "__main__":
     # Adjust the layout and save the figure
     plt.tight_layout()
     plt.savefig(output_filename, bbox_inches='tight')
-    plt.show()
+    plt.close()
+    print(f"Dendrogram saved to {output_filename}")

@@ -61,69 +61,36 @@ def get_image_vectors_from_directory(directory_name: str, debug_: bool, batch_si
     return vectors, filenames
 
 
-def bisecting_kmeans_clustering(vectors: List[np.ndarray], names: List[str], max_depth: int, num_samples: int) -> Dict:
-    # Subsample the input list
-    subsample_indices = random.sample(range(len(vectors)), num_samples)
-    subsample_vectors = [vectors[i] for i in subsample_indices]
-    subsample_names = [names[i] for i in subsample_indices]
+def bisecting_kmeans(vectors: List[np.ndarray], filenames: List[str], num_clusters: int) -> Dict:
+    """
+    Perform bisecting k-means clustering on a set of vectors to cluster them into a dendrogram.
 
-    centroids = []
+    :param vectors: A list of vectors to cluster.
+    :param filenames: A list of filenames corresponding to the vectors.
+    :param num_clusters: The number of clusters to create.
+    :returns: A tree representing the clustering. Each intermediate node has a "children" field containing two child nodes.
+              Each leaf node has an "elements" field containing the filenames of the vectors in that cluster.
+    """
+    def kmeans_inner(vectors_: List[np.ndarray], filenames_: List[str], k: int) -> Dict:
+        """
+        Perform 2-means clustering on a set of vectors to cluster them into two sub-clusters.
+        """
+        n = len(vectors_)
+        if n <= k:  # Base case: There are less elements than the number of clusters. Each cluster is a singleton.
+            return {"children": [{"elements": filename} for filename in filenames_]}
+        if len(vectors_) == 1:  # Base case: There is only one cluster left. No need to perform clustering work.
+            return {"elements": filenames_}
+        # Normal case: Divide the existing cluster into two sub-clusters using k-means.
+        kmeans = KMeans(n_clusters=2, init='k-means++', algorithm='elkan')
+        cluster_assignments = kmeans.fit_predict(vectors_)
+        children = []
+        for i in range(2):
+            child_vectors = [vectors_[j] for j in range(n) if cluster_assignments[j] == i]
+            child_filenames = [filenames_[j] for j in range(n) if cluster_assignments[j] == i]
+            children.append(kmeans_inner(child_vectors, child_filenames, k-1))
+        return {"children": children}
 
-    def build_tree(vectors: List[np.ndarray], names: List[str], current_depth: int) -> Dict:
-        # If the current depth exceeds max_depth, return all elements in the subtree
-        if current_depth >= max_depth or len(vectors) <= 1:
-            return {'elements': names}
-
-        # Apply bisecting k-means
-        kmeans = KMeans(n_clusters=2)
-        kmeans.fit(vectors)
-        centroids.append(kmeans.cluster_centers_)
-
-        left_indices = [i for i in range(len(vectors)) if kmeans.labels_[i] == 0]
-        right_indices = [i for i in range(len(vectors)) if kmeans.labels_[i] == 1]
-
-        left_vectors = [vectors[i] for i in left_indices]
-        right_vectors = [vectors[i] for i in right_indices]
-        left_names = [names[i] for i in left_indices]
-        right_names = [names[i] for i in right_indices]
-
-        left_tree = build_tree(left_vectors, left_names, current_depth + 1)
-        right_tree = build_tree(right_vectors, right_names, current_depth + 1)
-
-        return {'children': [left_tree, right_tree]}
-
-    # Build tree for subsample
-    tree = build_tree(subsample_vectors, subsample_names, 0)
-
-    # Assign original elements to the leaves of the tree
-    def assign_elements_to_leaves(node: Dict, vector: np.ndarray, name: str):
-        if 'elements' in node:
-            node['elements'].append(name)
-        else:
-            left_centroid, right_centroid = node['children'][0]['centroid'], node['children'][1]['centroid']
-            left_dist = np.linalg.norm(vector - left_centroid)
-            right_dist = np.linalg.norm(vector - right_centroid)
-            if left_dist < right_dist:
-                assign_elements_to_leaves(node['children'][0], vector, name)
-            else:
-                assign_elements_to_leaves(node['children'][1], vector, name)
-
-    # Initialize elements field in leaf nodes
-    def initialize_elements_field(node: Dict):
-        if 'elements' in node:
-            node['elements'] = []
-        else:
-            initialize_elements_field(node['children'][0])
-            initialize_elements_field(node['children'][1])
-
-    # Initialize elements field for each leaf
-    initialize_elements_field(tree)
-
-    # Assign each original element to the appropriate leaf
-    for vector, name in zip(vectors, names):
-        assign_elements_to_leaves(tree, vector, name)
-
-    return tree
+    return kmeans_inner(vectors, filenames, num_clusters)
 
 
 def save_as_json(data, filename: str):

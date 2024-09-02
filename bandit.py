@@ -231,7 +231,7 @@ def approx_top_k_bandit(index: IndexNode, k: int, scoring_fn: Callable, sampling
     time_start = time.time()
     itr = 0
     pq: LimitedPQ = LimitedPQ(k)
-    print("[")
+    iter_results: List = []
     while True:
         # Check termination condition
         if isinstance(budget, int):
@@ -253,7 +253,7 @@ def approx_top_k_bandit(index: IndexNode, k: int, scoring_fn: Callable, sampling
         pq.insert(sample, score)
         # Update metadata over the index
         index.update(algorithm, selected_leaf_idx, score, itr)
-        # Print out iteration result
+        # Accumulate iteration result
         result = {
             "iteration": itr,
             "arm": selected_leaf_idx,
@@ -262,9 +262,8 @@ def approx_top_k_bandit(index: IndexNode, k: int, scoring_fn: Callable, sampling
             "pq": pq.get_heap(),
             "index": index.to_dict()
         }
-        print(json.dumps(result) + ",")
-    print("]")
-    return pq.get_heap()
+        iter_results.append(result)
+    return iter_results
 
 
 def select_leaf_arm(index: IndexNode, algorithm: str, params: Dict, kth_best_score: float, itr: int) -> List[int]:
@@ -292,7 +291,7 @@ def select_leaf_arm_ucb(node: IndexNode) -> List[int]:
         children = node.children
         max_ucb = 0.0
         best_child_idx = 0
-        for child, idx in enumerate(children):
+        for idx, child in enumerate(children):
             upper_bound = child.metadata['ucb']
             if upper_bound > max_ucb:
                 best_child_idx = idx
@@ -318,3 +317,5 @@ def select_leaf_arm_epsgreedy(node: IndexNode, kth_best_score: float, params: Di
             num_children: int = len(node.children)
             child_idx: int = random.choice(range(num_children))
             return [child_idx] + select_leaf_arm_epsgreedy(node.get_child_at(child_idx), kth_best_score, params, itr)
+
+def scoring_fn_

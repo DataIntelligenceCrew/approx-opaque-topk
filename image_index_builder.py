@@ -85,7 +85,7 @@ def get_image_vectors_from_directory(directory_name: str, debug_print_: bool, ba
     images_vectors = []
 
 
-    iter_ = 1
+    iter_ = 0
     for f in os.listdir(directory_name):
         if f.endswith('.png'):
             if iter_ % batch_size == 0:

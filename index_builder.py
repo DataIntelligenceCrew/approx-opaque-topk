@@ -117,10 +117,10 @@ def bisecting_kmeans(vectors: List[np.ndarray], filenames: List[str], k: int) ->
             children.append({"vectors": child_filenames, 'inertia': inertia, "filenames": child_filenames})
         leaf_to_modify['children'] = children
         del leaf_to_modify['vectors']
-    tree = {"vectors": vectors, "elements": filenames, 'inertia': 0}
+    tree = {"vectors": vectors, "filenames": filenames, 'inertia': 0}
     for i in range(k - 1):
         bisecting_kmeans_inner(tree)
-    # Remove vectors from the tree
+    # Remove vectors from the tree, rename filenames to elements
     def remove_vectors(node):
         if 'vectors' in node:
             del node['vectors']

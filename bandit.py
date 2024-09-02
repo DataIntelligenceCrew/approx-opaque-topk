@@ -244,7 +244,7 @@ def approx_top_k_bandit(index: IndexNode, k: int, scoring_fn: Callable, sampling
         else:
             raise ValueError("Budget must be int (iterations) or float (time in seconds).")
         # Choose leaf node and sample from it
-        selected_leaf_idx: List[int] = select_leaf_arm(index, algorithm, algo_params, pq.kth_best_score())
+        selected_leaf_idx: List[int] = select_leaf_arm(index, algorithm, algo_params, pq.kth_best_score(), itr)
         leaf_node: IndexLeaf = index.get_grandchild(selected_leaf_idx)
         sample_id: str = leaf_node.sample_with_replacement()
         sample = sampling_fn(sample_id, **sampling_params)
@@ -267,14 +267,14 @@ def approx_top_k_bandit(index: IndexNode, k: int, scoring_fn: Callable, sampling
     return pq.get_heap()
 
 
-def select_leaf_arm(index: IndexNode, algorithm: str, params: Dict, kth_best_score: float) -> List[int]:
+def select_leaf_arm(index: IndexNode, algorithm: str, params: Dict, kth_best_score: float, itr: int) -> List[int]:
     match algorithm:
         case "UniformExploration":
             return select_leaf_arm_uniform(index)
         case "UCB":
             return select_leaf_arm_ucb(index)
         case "EpsGreedy":
-            return select_leaf_arm_epsgreedy(index, kth_best_score)
+            return select_leaf_arm_epsgreedy(index, kth_best_score, params, itr)
 
 def select_leaf_arm_uniform(node: Union[IndexNode, IndexLeaf]) -> List[int]:
     if isinstance(node, IndexLeaf):
@@ -298,15 +298,23 @@ def select_leaf_arm_ucb(node: IndexNode) -> List[int]:
                 best_child_idx = idx
         return [best_child_idx] + select_leaf_arm_ucb(node.get_child_at(best_child_idx))
 
-def select_leaf_arm_epsgreedy(node: IndexNode, kth_best_score: float) -> List[int]:
+def select_leaf_arm_epsgreedy(node: IndexNode, kth_best_score: float, params: Dict, itr: int) -> List[int]:
     if isinstance(node, IndexLeaf):
         return []
     elif isinstance(node, IndexNode):
-        children = node.children
-        max_gain = 0.0
-        best_child_idx = 0
-        for idx, child in enumerate(children):
-            gain = child.metadata['histogram'].expected_marginal_gain(kth_best_score)
-            if gain > max_gain:
-                best_child_idx = idx
-        return [best_child_idx] + select_leaf_arm_epsgreedy(node.get_child_at(best_child_idx), kth_best_score)
+        alpha = params['alpha']
+        eps = alpha * math.pow(itr, -1.0/3.0)
+        rand = random.random()
+        if rand < eps:
+            children = node.children
+            max_gain = 0.0
+            best_child_idx = 0
+            for idx, child in enumerate(children):
+                gain = child.metadata['histogram'].expected_marginal_gain(kth_best_score)
+                if gain > max_gain:
+                    best_child_idx = idx
+            return [best_child_idx] + select_leaf_arm_epsgreedy(node.get_child_at(best_child_idx), kth_best_score, params, itr)
+        else:
+            num_children: int = len(node.children)
+            child_idx: int = random.choice(range(num_children))
+            return [child_idx] + select_leaf_arm_epsgreedy(node.get_child_at(child_idx), kth_best_score, params, itr)

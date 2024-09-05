@@ -5,65 +5,6 @@ import random
 import time
 from typing import List, Callable, Union, Tuple, Dict, Self
 
-class Histogram:
-    def __init__(self, bin_borders: List[float], rebin_decay: float = 0.95, enlarge_factor: float = 1.2):
-        self._num_bins: int = len(bin_borders) - 1
-        self._bin_borders: List[float] = bin_borders
-        self._bin_counts: List[float] = [0.0 for _ in range(self._num_bins)]
-        self._total_counts: float = 0.0
-        self._rebin_decay: float = rebin_decay
-        self._enlarge_factor: float = enlarge_factor
-
-    def expected_marginal_gain(self, kth_largest_score: float):
-        gain = 0.0
-        for b in range(self._num_bins):
-            lo = max(kth_largest_score, self._bin_borders[b])
-            hi = self._bin_borders[b + 1]
-            if hi > lo:
-                bin_gain = (self._bin_counts[b] / self._total_counts) * (hi + lo) / 2.0
-                gain += bin_gain
-        return gain
-
-    def rebin(self, new_bin_borders: List[float]) -> Self:
-        new_histogram = Histogram(new_bin_borders, rebin_decay=self._rebin_decay, enlarge_factor=self._enlarge_factor)
-        new_bin_counts = [0.0 for _ in range(new_histogram._num_bins)]
-        for b_old in range(self._num_bins):
-            for b_new in range(new_histogram._num_bins):
-                lo = max(self._bin_borders[b_old], new_bin_borders[b_new])
-                hi = min(self._bin_borders[b_old+1], new_bin_borders[b_new+1])
-                if hi > lo:
-                    new_bin_counts += self._bin_counts[b_old] * (hi - lo) / (self._bin_borders[b_old+1] - self._bin_borders[b_old])
-        new_bin_counts = [self._rebin_decay * x for x in new_bin_counts]
-        new_total_counts = sum(new_bin_counts)
-        new_histogram._bin_counts = new_bin_counts
-        new_histogram._total_counts = new_total_counts
-        return new_histogram
-
-    def update_from_score(self, score: float) -> Self:
-        histogram = self
-        range_max = self._bin_borders[-1]
-        if score > range_max:
-            new_borders = Histogram._uniformly_divide_range_with_large_first_bin(histogram._bin_borders[0], histogram._bin_borders[1], histogram._bin_borders[-1], histogram._num_bins)
-            histogram = histogram.rebin(new_borders)
-        if histogram._bin_borders[1] > histogram._bin_borders[2]:
-            new_borders = Histogram._uniformly_divide_range_with_large_first_bin(histogram._bin_borders[0], histogram._bin_borders[2], histogram._bin_borders[-1], histogram._num_bins)
-            histogram = histogram.rebin(new_borders)
-        for b in range(histogram._num_bins):
-            b_lo = histogram._bin_borders[b]
-            if score > b_lo:
-                histogram._bin_counts[b] += 1.0
-                break
-        histogram._total_counts += 1.0
-        return histogram
-
-    @staticmethod
-    def uniformly_divide_range(min_value: float, max_value: float, num_bins: int) -> List[float]:
-        return [min_value + (max_value - min_value) * (x / num_bins) for x in range(num_bins + 1)]
-
-    @staticmethod
-    def _uniformly_divide_range_with_large_first_bin(min_value: float, first_bin_hi: float, max_value: float, num_bins: int) -> List[float]:
-        return [min_value] + Histogram.uniformly_divide_range(first_bin_hi, max_value, num_bins - 1)
-
 
 class IndexLeaf:
     def __init__(self, children: List[str], metadata: Dict):

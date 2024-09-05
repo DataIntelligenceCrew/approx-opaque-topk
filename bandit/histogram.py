@@ -1,5 +1,5 @@
-from random import uniform
-from typing import List
+from typing import List, Dict
+
 
 class Histogram:
     """
@@ -101,6 +101,17 @@ class Histogram:
                 break
         # Increment the total count
         self._total_counts += 1.0
+
+    def to_dict(self) -> Dict:
+        """
+        :return: A dictionary representation of this histogram. Useful for JSON serialization.
+        """
+        return {
+            "num_bins": self._num_bins,
+            "bin_borders": self._bin_borders,
+            "bin_counts": self._bin_counts,
+            "total_counts": self._total_counts
+        }
 
 def uniformly_divide_range(min_value: float, max_value: float, num_bins: int) -> List[float]:
     """

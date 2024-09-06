@@ -6,6 +6,7 @@ class Histogram:
     Abstracts the maintenance of a histogram.
     Histograms are used to approximate distributions and compute expected marginal gain.
     """
+
     def __init__(self, bin_borders: List[float], rebin_decay: float = 0.95, enlarge_max_factor: float = 1.2, enlarge_lowest: bool = True):
         """
         Initialize a Histogram instance.
@@ -26,6 +27,24 @@ class Histogram:
         self._rebin_decay: float = rebin_decay
         self._enlarge_factor: float = enlarge_max_factor
         self._enlarge_lowest: bool = enlarge_lowest
+
+    @staticmethod
+    def new_empty_uniform(min_value: float, max_value: float, num_bins: int, rebin_decay: float = 0.95, enlarge_max_factor: float = 1.2, enlarge_lowest: bool = True) -> 'Histogram':
+        """
+        Creates a new empty histogram with uniform bins.
+
+        :param min_value: The minimum value of the interval.
+        :param max_value: The maximum value of the interval.
+        :param num_bins: The number of bins in the interval. Must be at least 1.
+        :param rebin_decay: The factor to decay previous bin counts when re-binning.
+        :param enlarge_max_factor: The factor to enlarge the bin borders when a sample larger than the current maximum
+                               range is observed.
+        :param enlarge_lowest: Whether to enlarge the lowest bin when the kth largest score is larger than the top-end
+                               of the 2nd lowest bin.
+        :return: A new Histogram instance with uniform bins.
+        """
+        bin_borders: List[float] = uniformly_divide_range(min_value, max_value, num_bins)
+        return Histogram(bin_borders, rebin_decay, enlarge_max_factor, enlarge_lowest)
 
     def expected_marginal_gain(self, kth_largest_score: float):
         """

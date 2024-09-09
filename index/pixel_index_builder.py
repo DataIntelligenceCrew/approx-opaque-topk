@@ -6,6 +6,7 @@ from PIL import Image
 from typing import List, Tuple
 from scipy.cluster.hierarchy import linkage, to_tree
 import sys
+import time
 
 
 def get_image_vectors_from_directory(directory_name: str) -> Tuple[List[np.ndarray], List[str]]:
@@ -26,7 +27,7 @@ def get_image_vectors_from_directory(directory_name: str) -> Tuple[List[np.ndarr
             path: str = os.path.join(directory_name, f)
             filenames.append(f)  # Save image filename
             image = Image.open(path).convert("RGB")
-            vector = np.array(image).flatten / 255.0
+            vector = np.array(image).flatten() / 255.0
             vectors.append(vector)
             itr += 1
     return vectors, filenames
@@ -101,6 +102,8 @@ if __name__ == '__main__':
     
     USAGE: python3 index_builder.py <image_directory_path> <index_file_path> <k>
     """
+    start_time = time.time()
+
     image_directory_path = sys.argv[1]
     index_file_path = sys.argv[2]
     k = int(sys.argv[3])
@@ -108,11 +111,25 @@ if __name__ == '__main__':
     # Get image vectors and filenames
     vectors, filenames = get_image_vectors_from_directory(image_directory_path)
 
+    file_read_time = time.time()
+
     # Cluster the vectors and get the corresponding strings
     clustered_strings, centroids = cluster_vectors_and_return_strings(vectors, filenames, k)
+
+    clustering_time = time.time()
 
     # Perform HAC on the cluster centroids
     dendrogram = hac_dendrogram(centroids, clustered_strings)
 
+    hac_time = time.time()
+
     # Save the dendrogram to a JSON file
     save_as_json(dendrogram, index_file_path)
+
+    end_time = time.time()
+
+    print(f"LOG: File read time: {file_read_time - start_time}")
+    print(f"LOG: Clustering time: {clustering_time - file_read_time}")
+    print(f"LOG: HAC time: {hac_time - clustering_time}")
+    print(f"LOG: Saving time: {end_time - hac_time}")
+    print(f"LOG: Total time: {end_time - start_time}")

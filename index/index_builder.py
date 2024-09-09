@@ -5,6 +5,7 @@ from sklearn.cluster import KMeans
 from PIL import Image
 from typing import List, Tuple
 from scipy.cluster.hierarchy import linkage, to_tree
+import sys
 
 
 def get_image_vectors_from_directory(directory_name: str) -> Tuple[List[np.ndarray], List[str]]:
@@ -92,3 +93,26 @@ def save_as_json(data, filename: str):
     with open(filename, 'w') as f:
         json.dump(data, f, indent=4)
 
+
+if __name__ == '__main__':
+    """
+    Given some directory path, constructs a VOODOO index over all images in that directory. 
+    Then, saves the index to a JSON file. 
+    
+    USAGE: python3 index_builder.py <image_directory_path> <index_file_path> <k>
+    """
+    image_directory_path = sys.argv[1]
+    index_file_path = sys.argv[2]
+    k = int(sys.argv[3])
+
+    # Get image vectors and filenames
+    vectors, filenames = get_image_vectors_from_directory(image_directory_path)
+
+    # Cluster the vectors and get the corresponding strings
+    clustered_strings, centroids = cluster_vectors_and_return_strings(vectors, filenames, k)
+
+    # Perform HAC on the cluster centroids
+    dendrogram = hac_dendrogram(centroids, clustered_strings)
+
+    # Save the dendrogram to a JSON file
+    save_as_json(dendrogram, index_file_path)

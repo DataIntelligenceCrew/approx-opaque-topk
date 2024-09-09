@@ -7,8 +7,8 @@ class LimitedPQ:
     A max-priority-queue that ensures that the size of the queue is bounded by k.
     """
     def __init__(self, cardinality_constraint: int):
-        self._k = cardinality_constraint
-        self._heap = MinMaxHeap()
+        self._k: int = cardinality_constraint
+        self._heap: MinMaxHeap = MinMaxHeap()
 
     def insert(self, element: str, score: float):
         """
@@ -26,10 +26,10 @@ class LimitedPQ:
         """
         :return: A list of the elements in the queue and a list of their corresponding scores, in descending order of score.
         """
-        heap = self._heap.queue()
+        heap: List = self._heap.queue()
         heap.sort()  # Sort the heap in ascending order of priority, which is descending order of score
         elements, scores = zip(*heap)  # Unzip the list of tuples into two lists
-        scores = [-score for score in scores]  # Negate the priorities to get the actual scores
+        scores: List[float] = [-score for score in scores]  # Negate the priorities to get the actual scores
         return elements, scores
 
     def kth_best_score(self) -> float:

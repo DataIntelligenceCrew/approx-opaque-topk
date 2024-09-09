@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Callable
 
 from PIL import Image
 
@@ -24,7 +24,7 @@ def image_directory_sampler(sample_id: str, sampling_params: Dict) -> Image.Imag
     """
     return Image.open(sampling_params['directory_path'] + sample_id)
 
-def get_sampler_from_params(sampling_params: Dict):
+def get_sampler_from_params(sampling_params: Dict) -> Callable:
     """
     Returns the sampler function based on the sampling parameters.
 

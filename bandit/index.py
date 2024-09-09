@@ -208,7 +208,8 @@ class IndexNode:
 
     def _initialize_ucb_metadata(self, params: Dict):
         init = params['init']
-        self.metadata.update({'mean': init, 'count': 0.0})
+        # Initializing count as 1 adds initial bias but prevents division by zero
+        self.metadata.update({'mean': init, 'count': 1.0})
         for child in self.children:
             child._initialize_ucb_metadata(params)
 
@@ -266,10 +267,23 @@ def store_index_to_json(index: IndexNode, filename: str):
 
 def load_index_from_json(filename: str) -> IndexNode:
     """
-    Load the index from a JSON file.
+    Load the index from a JSON file. TODO: implementation.
 
     :param filename: The name of the JSON file.
     :return: The index loaded.
     """
     with open (filename, 'r') as json_file:
         return json.load(json_file)
+
+def get_index_from_dict(dict_: Dict) -> IndexNode:
+    """
+    Get an index from a dictionary representation.
+
+    :param dict_: The dictionary representation of the index.
+    :return: The index created from the dictionary.
+    """
+    if isinstance(dict_['children'][0], dict):
+        children = [get_index_from_dict(child) for child in dict_['children']]
+    else:
+        children = [IndexLeaf(child['children'], child['metadata']) for child in dict_['children']]
+    return IndexNode(children, dict_['metadata'])

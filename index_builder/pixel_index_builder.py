@@ -89,7 +89,7 @@ def hac_dendrogram(cluster_centroids: np.ndarray, clustered_strings: List[List[s
 
 def save_as_json(data, filename: str):
     """
-    Saves some data to a JSON file.
+    Saves some index_metadata to a JSON file.
     """
     with open(filename, 'w') as f:
         json.dump(data, f, indent=4)
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     Given some directory path, constructs a VOODOO index over all images in that directory. 
     Then, saves the index to a JSON file. 
     
-    USAGE: python3 index_builder.py <image_directory_path> <index_file_path> <k>
+    USAGE: python3 pixel_index_builder.py <image_directory_path> <index_file_path> <k>
     """
     start_time = time.time()
 

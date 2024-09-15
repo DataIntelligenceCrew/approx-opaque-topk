@@ -1,59 +1,91 @@
-import os
-import json
 import numpy as np
-from sklearn.cluster import KMeans
-from PIL import Image
-from typing import List, Tuple
-from scipy.cluster.hierarchy import linkage, to_tree
-import sys
-import time
-from pixel_index_builder import *
+import argparse
 
-def generate_random_distributions(k_: int, n: int):
+from builder import hac_dendrogram, save_as_json
+
+def generate_random_distributions(k: int, n: int, mu_min: float, mu_max: float, stdev_min: float, stdev_max: float):
     """
-    :param k_: The number of distributions to generate.
+    :param k: The number of distributions to generate.
     :param n: The number of samples to generate for each distribution.
-    :return: A list of samples and the means of the distributions.
+    :return: A list of samples and the means of the distributions. A sample is a dictionary with fields 'id', 'score'.
     """
-    means = np.random.uniform(0.0, 20.0, k)
-    stdevs = np.random.uniform(1.0, 10.0, k)
-    samples = []
-    for _ in range(k_):
-        samples_ = []
-        for i in range(n):
-            samples_.append(np.random.normal(loc=means[_], scale=stdevs[_]))
-            samples.append(samples_)
-    return samples, means
+    # Randomly generate means and stdevs
+    means = np.random.uniform(mu_min, mu_max, k)
+    stdevs = np.random.uniform(stdev_min, stdev_max, k)
+    # Draw samples
+    samples = []  # A 2-dimensional list of shape (k, n)
+    for k_ in range(k):
+        scores = np.random.normal(loc=means[k_], scale=stdevs[k_], size=n)
+        scores = [x for x in scores]
+        samples.append(scores)
+    # Make samples into objects
+    clusters = []
+    id_counter = 0
+    for sample_cluster in samples:
+        cluster = []
+        for sample in sample_cluster:
+            cluster.append({
+                'id': id_counter,
+                'score': sample
+            })
+            id_counter += 1
+        clusters.append(cluster)
+    return clusters, means
 
 if __name__ == '__main__':
     """
-    Given some directory path, constructs a VOODOO index over all images in that directory. 
-    Then, saves the index to a JSON file. 
-
-    USAGE: python3 pixel_index_builder.py <index_file_path> <k> <n>
+    Given some directory path, constructs a synthetic VOODOO index. 
+    In this setting, a leaf cluster is a synthetic normal distribution, where the mean and standard deviations are
+    uniformly randomly sampled from a specified range. 
+    The dendrogram is built over the means of the distributions. 
+    A separate version of the index, which combines all samples into a single leaf, is built as well. 
+    The dendrogram-based index and the flat index are saved into separate JSON files. 
     """
-    start_time = time.time()
-
-    index_file_path = sys.argv[1]
-    k = int(sys.argv[2])
-    n = int(sys.argv[3])
+    # Parse arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dendrogram-file', type=str, required=True)
+    parser.add_argument('--flattened-file', type=str, required=True)
+    parser.add_argument('-k', type=int, required=True, help='Number of leaf clusters.')
+    parser.add_argument('-n', type=int, required=True, help='Number of samples per leaf cluster.')
+    parser.add_argument('--mu-min', type=float, required=False, default=0.0,
+                        help='Minimum range to draw mean (mu) from.')
+    parser.add_argument('--mu-max', type=float, required=False, default=10.0,
+                        help='Maximum range to draw mean (mu) from.')
+    parser.add_argument('--stdev-min', type=float, required=False, default=0.001,
+                        help='Minimum range to draw standard deviation from.')
+    parser.add_argument('--stdev-max', type=float, required=False, default=5.0,
+                        help='Maximum range to draw standard deviation from.')
+    args = parser.parse_args()
 
     # Cluster the vectors and get the corresponding strings
-    clusters, means = generate_random_distributions(k, n)
+    clusters, means = generate_random_distributions(k=args.k, n=args.n, mu_min=args.mu_min, mu_max=args.mu_max, stdev_min=args.stdev_min, stdev_max=args.stdev_max)
 
-    clustering_time = time.time()
+    # Flatten the samples in descending order
+    flattened_cluster = [x for xs in clusters for x in xs]
+    flattened_cluster = sorted(flattened_cluster, key = lambda x: -x['score'])
+
+    # Obtain GT rank of the samples
+    id_to_ranking = {}
+    for ranking, sample in enumerate(flattened_cluster):
+        sample_id = sample['id']
+        id_to_ranking[sample_id] = ranking
+
+    # Modify both the nested and flattened clusters to add ranking to each item
+    for cluster in clusters:
+        for sample in cluster:
+            sample['rank'] = id_to_ranking[sample['id']]
+    for sample in flattened_cluster:
+        sample['rank'] = id_to_ranking[sample['id']]
+
+    # We need to add an extra zero column to the means since the dendrogram clustering method requires 2 or more dimensions to HAC vectors
+    zeros = np.zeros(args.k)
+    padded_means = np.column_stack((means, zeros))
 
     # Perform HAC on the cluster centroids
-    dendrogram = hac_dendrogram(means, clusters)
-
-    hac_time = time.time()
+    dendrogram = hac_dendrogram(padded_means, clusters)
 
     # Save the dendrogram to a JSON file
-    save_as_json(dendrogram, index_file_path)
+    save_as_json(dendrogram, args.dendrogram_file)
 
-    end_time = time.time()
-
-    print(f"LOG: Clustering time: {clustering_time - start_time}")
-    print(f"LOG: HAC time: {hac_time - clustering_time}")
-    print(f"LOG: Saving time: {end_time - hac_time}")
-    print(f"LOG: Total time: {end_time - start_time}")
+    # Save the flattened index to a JSON file
+    save_as_json({'children': flattened_cluster}, args.flattened_file)

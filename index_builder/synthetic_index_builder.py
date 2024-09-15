@@ -68,7 +68,7 @@ if __name__ == '__main__':
     id_to_ranking = {}
     for ranking, sample in enumerate(flattened_cluster):
         sample_id = sample['id']
-        id_to_ranking[sample_id] = ranking
+        id_to_ranking[sample_id] = ranking+1
 
     # Modify both the nested and flattened clusters to add ranking to each item
     for cluster in clusters:

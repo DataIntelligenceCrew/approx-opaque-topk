@@ -26,9 +26,9 @@ class LimitedPQ:
         """
         :return: A list of the elements in the queue and a list of their corresponding scores, in descending order of score.
         """
-        heap: List = self._heap.queue()
+        heap: List = self._heap.queue.copy()
         heap.sort()  # Sort the heap in ascending order of priority, which is descending order of score
-        elements, scores = zip(*heap)  # Unzip the list of tuples into two lists
+        scores, elements = zip(*heap)  # Unzip the list of tuples into two lists
         scores: List[float] = [-score for score in scores]  # Negate the priorities to get the actual scores
         return elements, scores
 
@@ -36,7 +36,14 @@ class LimitedPQ:
         """
         :return: The score of the kth best element in the queue.
         """
-        return -1 * self._heap.queue()[0][0]  # Get the first tuple in heap, then negate its priority
+        if self._heap.size() < self._k:
+            return 0.0
+        else:
+            s1 = -1 * self._heap.queue[1][0]  # Get the first tuple in heap, then negate its priority
+            s2 = -1 * self._heap.queue[2][0]
+            s = min(s1, s2)
+            #print(s, self._heap.queue[:4])
+            return s
 
     def to_dict(self) -> Dict:
         """

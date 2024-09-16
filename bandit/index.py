@@ -1,14 +1,14 @@
 import json
-import math
 import random
-from typing import List, Dict, Union, Self
+from typing import List, Dict, Union, Tuple
+from typing_extensions import Self
 
 from bandit.histogram import Histogram
 
 """
-The index builder methods build the index as a JSON file. 
-During query execution, it is read into memory and teh whole index stays in memory at all times. 
-The index data structure is built from a dictionary representation of the JSON index. 
+The index_builder builder methods build the index_builder as a JSON file. 
+During query execution, it is read into memory and teh whole index_builder stays in memory at all times. 
+The index_builder index_metadata structure is built from a dictionary representation of the JSON index_builder. 
 In addition to holding the dendrogram structure, it also holds information about which string identifiers belong to each
 leaf node, as well as additional metadata per node for bandit algorithms. 
 """
@@ -16,9 +16,9 @@ leaf node, as well as additional metadata per node for bandit algorithms.
 
 class IndexLeaf:
     """
-    IndexLeaf represents a leaf node in the index.
-    A leaf node is a cluster at the bottom of the index structure that contains a list of string identifiers.
-    The IDs are then used by the sampler methods to retrieve the actual data points from the data store.
+    IndexLeaf represents a leaf node in the index_builder.
+    A leaf node is a cluster at the bottom of the index_builder structure that contains a list of string identifiers.
+    The IDs are then used by the sampler methods to retrieve the actual index_metadata points from the index_metadata store.
     """
 
     def __init__(self, children: List[str], metadata: Dict = None):
@@ -33,19 +33,19 @@ class IndexLeaf:
         self._next_sample_idx: int = 0  # Use a simple integer for walking through the shuffle
         self.metadata: Dict = metadata if metadata is not None else dict()  # Any information attached to this node
 
-    def sample_without_replacement(self) -> Union[str, None]:
+    def sample_without_replacement(self) -> Tuple[Union[str, None], bool]:
         """
         Performs sampling without replacement from the children of this leaf node.
-        The sample is implemented as simply a walk through the shuffled list of children by an index.
+        The sample is implemented as simply a walk through the shuffled list of children by an index_builder.
 
-        :return: Either the ID of a randomly sampled child, or None if no unseen child remains.
+        :return: Either the ID of a randomly sampled child, or None if no unseen child remains; and if this sample made this leaf empty.
         """
         if self._next_sample_idx >= self._n:  # No unseen child remains
-            return None
+            return None, True
         else:  # There are unseen children left
             sample: str = self._children[self._next_sample_idx]
             self._next_sample_idx += 1
-            return sample
+            return sample, self.remaining_size() <= 0
 
     def sample_with_replacement(self) -> Union[str, None]:
         """
@@ -71,29 +71,29 @@ class IndexLeaf:
 
     def get_grandchild(self, grandchild_idx: List[int]) -> Self:
         """
-        Method used to obtain a leaf node from an index specifying it (e.g. [0, 1, 2]).
-        Since this is a leaf node, the grandchild index should be empty.
+        Method used to obtain a leaf node from an index_builder specifying it (e.g. [0, 1, 2]).
+        Since this is a leaf node, the grandchild index_builder should be empty.
 
-        :param grandchild_idx: The index specifying the leaf node to be retrieved.
+        :param grandchild_idx: The index_builder specifying the leaf node to be retrieved.
         :return: The leaf node itself.
         """
         if len(grandchild_idx) > 0:
-            raise ValueError("Leaf node got a non-empty grandchild index.")
+            raise ValueError("Leaf node got a non-empty grandchild index_builder.")
         return self
 
-    def to_dict(self, include_children: bool) -> Dict:
+    def to_dict(self, include_children: bool = False) -> Dict:
         """
         :param include_children: Whether to include the (remaining) children in the dictionary representation.
         :return: A dictionary representation of the leaf node.
         """
-        return {"children": self._children[self._next_sample_idx:] if include_children else None, "metadata": self.metadata}
+        return {"children": self._children[self._next_sample_idx:] if include_children else None, "histogram": self.metadata['histogram'].to_dict()}
 
     def update(self, algorithm: str, selected_leaf_idx: List[int], score: float, kth_largest_score: float):
         """
         Updates the metadata of the leaf node and its ancestors based on the bandit algorithm used.
 
         :param algorithm: The bandit algorithm used for updating the metadata.
-        :param selected_leaf_idx: The index of the leaf node that was selected during the query.
+        :param selected_leaf_idx: The index_builder of the leaf node that was selected during the query.
         :param score: The reward obtained from the selected leaf node.
         :param kth_largest_score: The current S_(k) value.
         """
@@ -158,7 +158,7 @@ class IndexLeaf:
 
 class IndexNode:
     """
-    IndexNode represents any non-leaf node in the index.
+    IndexNode represents any non-leaf node in the index_builder.
     An IndexNode has a list of children, which can be either other IndexNodes or IndexLeaves.
     """
 
@@ -174,17 +174,17 @@ class IndexNode:
 
     def get_child_at(self, child_idx: int) -> Union[Self, IndexLeaf]:
         """
-        :param child_idx: The index of the child to be retrieved.
-        :return: The child node at the specified index.
+        :param child_idx: The index_builder of the child to be retrieved.
+        :return: The child node at the specified index_builder.
         """
         return self.children[child_idx]
 
     def get_grandchild(self, grandchild_idx: List[int]) -> Union[Self, IndexLeaf]:
         """
-        Method used to obtain a leaf node from an index specifying it (e.g. [0, 1, 2]).
+        Method used to obtain a leaf node from an index_builder specifying it (e.g. [0, 1, 2]).
         The method recursively calls itself on the children of the current node.
 
-        :param grandchild_idx: The index specifying the leaf node to be retrieved.
+        :param grandchild_idx: The index_builder specifying the leaf node to be retrieved.
         :return: The leaf grandchild node.
         """
         child: Union[Self, IndexLeaf] = self.get_child_at(grandchild_idx[0])
@@ -192,7 +192,7 @@ class IndexNode:
 
     def to_dict(self) -> Dict:
         """
-        :return: A dictionary representation of the index node.
+        :return: A dictionary representation of the index_builder node.
         """
         return {"children": [child.to_dict() for child in self.children], "metadata": self.metadata}
 
@@ -209,7 +209,7 @@ class IndexNode:
     def _initialize_ucb_metadata(self, params: Dict):
         init = params['init']
         # Initializing count as 1 adds initial bias but prevents division by zero
-        self.metadata.update({'mean': init, 'count': 1.0})
+        self.metadata.update({'mean': init, 'count': 0.001})
         for child in self.children:
             child._initialize_ucb_metadata(params)
 
@@ -226,7 +226,7 @@ class IndexNode:
         Update the metadata of a leaf node and its ancestors based on the bandit algorithm used.
 
         :param algorithm: The bandit algorithm used for updating the metadata.
-        :param selected_leaf_idx: The index of the leaf node that was selected during the query.
+        :param selected_leaf_idx: The index_builder of the leaf node that was selected during the query.
         :param score: The reward obtained from the selected leaf node.
         :param kth_largest_score: The current S_(k) value.
         """
@@ -256,9 +256,9 @@ class IndexNode:
 
 def store_index_to_json(index: IndexNode, filename: str):
     """
-    Store the index to a JSON file.
+    Store the index_builder to a JSON file.
 
-    :param index: The index to be stored.
+    :param index: The index_builder to be stored.
     :param filename: The name of the JSON file.
     """
     index_dict = index.to_dict()
@@ -267,23 +267,23 @@ def store_index_to_json(index: IndexNode, filename: str):
 
 def load_index_from_json(filename: str) -> IndexNode:
     """
-    Load the index from a JSON file. TODO: implementation.
+    Load the index_builder from a JSON file. TODO: implementation.
 
     :param filename: The name of the JSON file.
-    :return: The index loaded.
+    :return: The index_builder loaded.
     """
     with open (filename, 'r') as json_file:
         return json.load(json_file)
 
-def get_index_from_dict(dict_: Dict) -> IndexNode:
+def get_index_from_dict(dict_: Dict) -> Union[IndexNode, IndexLeaf]:
     """
-    Get an index from a dictionary representation.
+    Get an index_builder from a dictionary representation.
 
-    :param dict_: The dictionary representation of the index.
-    :return: The index created from the dictionary.
+    :param dict_: The dictionary representation of the index_builder.
+    :return: The index_builder created from the dictionary.
     """
     if isinstance(dict_['children'][0], dict):
         children = [get_index_from_dict(child) for child in dict_['children']]
     else:
-        children = [IndexLeaf(child['children'], child['metadata']) for child in dict_['children']]
-    return IndexNode(children, dict_['metadata'])
+        return IndexLeaf(dict_['children'])
+    return IndexNode(children)

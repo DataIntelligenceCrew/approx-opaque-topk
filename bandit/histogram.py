@@ -23,7 +23,7 @@ class Histogram:
         self._num_bins: int = len(bin_borders) - 1
         self._bin_borders: List[float] = bin_borders
         self._bin_counts: List[float] = [0.0 for _ in range(self._num_bins)]  # Initialize a count of 0 for each bin
-        self._total_counts: float = 0.0  # The sum of all counts in this histogram
+        self._total_counts: float = 0.0 # The sum of all counts in this histogram; initialize > 0 to avoid division by 0
         self._rebin_decay: float = rebin_decay
         self._enlarge_factor: float = enlarge_max_factor
         self._enlarge_lowest: bool = enlarge_lowest
@@ -61,9 +61,10 @@ class Histogram:
             hi: float = self._bin_borders[b + 1]
             if hi > lo:  # If S_(k) is above this bin, we can skip this bin
                 bin_mean: float = (hi + lo) / 2.0
-                bin_prob: float = (self._bin_counts[b] / self._total_counts)
+                bin_prob: float = (self._bin_counts[b] / self._total_counts) * (hi - lo) / (hi - self._bin_borders[b]) if self._total_counts > 0.0 else 0.0
                 bin_gain: float = bin_prob * bin_mean
                 gain += bin_gain
+        #print(self, "gain:", gain, "Rk:", kth_largest_score)
         return gain
 
     def rebin(self, new_bin_borders: List[float]):
@@ -73,7 +74,7 @@ class Histogram:
         :param new_bin_borders: Bin borders for the new histogram.
         """
         # Compute the new bin counts by comparing the old and new bins
-        new_bin_counts: List[float] = [0.0 for _ in range(self._num_bins)]
+        new_bin_counts: List[float] = [0.0 for _ in range(len(new_bin_borders)-1)]
         for b_old in range(self._num_bins):
             for b_new in range(self._num_bins):
                 # Compute the overlap between the two bins
@@ -88,6 +89,7 @@ class Histogram:
         # Replace the counts in new histogram
         self._bin_counts = new_bin_counts
         self._total_counts = new_total_counts
+        self._bin_borders = new_bin_borders
 
     def update_from_score(self, score: float, kth_largest_score: float):
         """
@@ -98,28 +100,36 @@ class Histogram:
         :param score: The new score to update the histogram with.
         :param kth_largest_score: The current S_(k) value. Potentially used to enlarge the size of the lowest bin.
         """
+        #print("updating from score histogram!")
         # Rebin if the score is larger than maximum range
         range_max: float = self._bin_borders[-1]
-        if score > range_max:
-            new_range_max: float = score * self._enlarge_factor
-            new_borders_tail: List[float] = uniformly_divide_range(self._bin_borders[1], new_range_max, self._num_bins - 1)
+        if max(score, kth_largest_score) > range_max:
+            #print("rebin due to large score of", score, kth_largest_score, "compared to previous max", range_max)
+            new_range_max: float = max(score, kth_largest_score) * self._enlarge_factor
+            new_borders_tail: List[float] = uniformly_divide_range(self._bin_borders[1], new_range_max, self._num_bins-1)
             new_borders: List[float] = [self._bin_borders[0]] + new_borders_tail
+            #print("new borders:", new_borders)
             self.rebin(new_borders)
+            #print(self)
         # Rebin if enlarge_lowest flag is set to True and the kth largest score is greater than the top-end of the 2nd lowest bin
         if self._enlarge_lowest:
             if kth_largest_score > self._bin_borders[2]:
+                #print("enlarge lowest as S_(k) is", kth_largest_score, "compared to bin border", self._bin_borders[2])
                 new_borders_tail: List[float] = uniformly_divide_range(kth_largest_score, self._bin_borders[-1], self._num_bins - 1)
                 new_borders: List[float] = [self._bin_borders[0]] + new_borders_tail
+                #print("new borders:", new_borders)
                 self.rebin(new_borders)
+                #print(self)
         # Check each bin to see if the score falls into it, and increment the count if so
         for b in range(self._num_bins):
-            b_lo: float = self._bin_borders[b]
             b_hi: float = self._bin_borders[b+1]
-            if b_lo <= score <= b_hi:  # Score falls into this bin
+            if score <= b_hi:  # Score falls into this bin
                 self._bin_counts[b] += 1.0
                 break
         # Increment the total count
         self._total_counts += 1.0
+        #print(self)
+        #print()
 
     def to_dict(self) -> Dict:
         """
@@ -131,6 +141,9 @@ class Histogram:
             "bin_counts": self._bin_counts,
             "total_counts": self._total_counts
         }
+
+    def __repr__(self):
+        return str(self.to_dict())
 
 def uniformly_divide_range(min_value: float, max_value: float, num_bins: int) -> List[float]:
     """

@@ -3,26 +3,28 @@ from typing import Dict, Callable
 from PIL import Image
 
 
-def synthetic_sampler(sample_id: str, sampling_params: Dict):
+def synthetic_sampler(sample: str, sampling_params: Dict) -> float:
     """
     For the Synthetic dataset, the sampler is just the identity function.
-    Since we assume that the data is stored in the index as string keys, we need to convert it to an integer.
+    Since we assume that the index_metadata is stored in the index_builder as string keys, we need to convert it to an integer.
 
-    :param sample_id: The id of the data point.
+    :param sample: Information stored for a sample in the index. For a synthetic index, there are three fields:
+                   'id' (unique 0-indexed int), 'score' (float), and 'rank' (unique 1-indexed int).
     :param sampling_params: The sampling parameters. Not used in this case.
-    :return: The id of the data point as an integer.
+    :return: The sample itself.
     """
-    return float(sample_id)
+    return float(sample)
 
-def image_directory_sampler(sample_id: str, sampling_params: Dict) -> Image.Image:
+def image_directory_sampler(sample: str, sampling_params: Dict) -> Image.Image:
     """
     For image datasets, the sampler retrieves the image from the directory based on its filename.
 
-    :param sample_id: The filename of the image.
+    :param sample: Information stored for a sample in the index. For an image index, there are two fields:
+                   'filename' (unique str),
     :param sampling_params: The sampling parameters. Here, it should have 'directory_path' key.
     :return: The image as a PIL Image object.
     """
-    return Image.open(sampling_params['directory_path'] + sample_id)
+    return Image.open(sampling_params['directory_path'] + sample)
 
 def get_sampler_from_params(sampling_params: Dict) -> Callable:
     """

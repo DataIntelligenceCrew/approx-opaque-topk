@@ -1,13 +1,19 @@
+from typing import List, Tuple
+
 import numpy as np
 import argparse
 
 from builder import hac_dendrogram, save_as_json
 
-def generate_random_distributions(k: int, n: int, mu_min: float, mu_max: float, stdev_min: float, stdev_max: float):
+def generate_random_distributions(k: int, n: int, mu_min: float, mu_max: float, stdev_min: float, stdev_max: float) -> Tuple[List[List[float]], np.ndarray]:
     """
     :param k: The number of distributions to generate.
     :param n: The number of samples to generate for each distribution.
-    :return: A list of samples and the means of the distributions. A sample is a dictionary with fields 'id', 'score'.
+    :param stdev_max: Maximum standard deviation possible.
+    :param stdev_min: Minimum standard deviation possible.
+    :param mu_max: Maximum mean possible.
+    :param mu_min: Minimum mean possible.
+    :return: A list of samples and the means of the distributions.
     """
     # Randomly generate means and stdevs
     means = np.random.uniform(mu_min, mu_max, k)
@@ -18,19 +24,7 @@ def generate_random_distributions(k: int, n: int, mu_min: float, mu_max: float, 
         scores = np.random.normal(loc=means[k_], scale=stdevs[k_], size=n)
         scores = [x for x in scores]
         samples.append(scores)
-    # Make samples into objects
-    clusters = []
-    id_counter = 0
-    for sample_cluster in samples:
-        cluster = []
-        for sample in sample_cluster:
-            cluster.append({
-                'id': id_counter,
-                'score': sample
-            })
-            id_counter += 1
-        clusters.append(cluster)
-    return clusters, means
+    return samples, means
 
 if __name__ == '__main__':
     """
@@ -62,27 +56,27 @@ if __name__ == '__main__':
 
     # Flatten the samples in descending order
     flattened_cluster = [x for xs in clusters for x in xs]
-    flattened_cluster = sorted(flattened_cluster, key = lambda x: -x['score'])
+    flattened_cluster = sorted(flattened_cluster, reverse=True)
+    flattened_cluster = [str(x) for x in flattened_cluster]
 
     # Obtain GT rank of the samples
     id_to_ranking = {}
     for ranking, sample in enumerate(flattened_cluster):
-        sample_id = sample['id']
+        sample_id = str(sample)
         id_to_ranking[sample_id] = ranking+1
 
     # Modify both the nested and flattened clusters to add ranking to each item
+    str_clusters = []
     for cluster in clusters:
-        for sample in cluster:
-            sample['rank'] = id_to_ranking[sample['id']]
-    for sample in flattened_cluster:
-        sample['rank'] = id_to_ranking[sample['id']]
+        str_cluster = [str(x) for x in cluster]
+        str_clusters.append(str_cluster)
 
     # We need to add an extra zero column to the means since the dendrogram clustering method requires 2 or more dimensions to HAC vectors
     zeros = np.zeros(args.k)
     padded_means = np.column_stack((means, zeros))
 
     # Perform HAC on the cluster centroids
-    dendrogram = hac_dendrogram(padded_means, clusters)
+    dendrogram = hac_dendrogram(padded_means, str_clusters)
 
     # Save the dendrogram to a JSON file
     save_as_json(dendrogram, args.dendrogram_file)

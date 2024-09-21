@@ -1,3 +1,4 @@
+import random
 from typing import List, Tuple
 
 import numpy as np
@@ -39,6 +40,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dendrogram-file', type=str, required=True)
     parser.add_argument('--flattened-file', type=str, required=True)
+    parser.add_argument('--flattened-file-desc', type=str, required=False)
+    parser.add_argument('--flattened-file-asc', type=str, required=False)
     parser.add_argument('-k', type=int, required=True, help='Number of leaf clusters.')
     parser.add_argument('-n', type=int, required=True, help='Number of samples per leaf cluster.')
     parser.add_argument('--mu-min', type=float, required=False, default=0.0,
@@ -56,8 +59,10 @@ if __name__ == '__main__':
 
     # Flatten the samples in descending order
     flattened_cluster = [x for xs in clusters for x in xs]
-    flattened_cluster = sorted(flattened_cluster, reverse=True)
-    flattened_cluster = [str(x) for x in flattened_cluster]
+    flattened_increasing_cluster = sorted(flattened_cluster)
+    flattened_decreasing_cluster = sorted(flattened_cluster, reverse=True)
+    random.shuffle(flattened_cluster)
+    flattened_random_cluster = flattened_cluster
 
     # Obtain GT rank of the samples
     id_to_ranking = {}
@@ -82,4 +87,10 @@ if __name__ == '__main__':
     save_as_json(dendrogram, args.dendrogram_file)
 
     # Save the flattened index to a JSON file
-    save_as_json({'children': flattened_cluster}, args.flattened_file)
+    save_as_json({'children': [str(x) for x in flattened_cluster]}, args.flattened_file)
+
+    # Optionally, save a sorted ascending or descending version of the flattened index
+    if args.flattened_file_desc:
+        save_as_json({'children': [str(x) for x in flattened_decreasing_cluster]}, args.flattened_file_desc)
+    if args.flattened_file_asc:
+        save_as_json({'children': [str(x) for x in flattened_increasing_cluster]}, args.flattened_file_asc)

@@ -1,0 +1,372 @@
+{
+  "Scan": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "Scan"
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-flattened-k50.json",
+    "sample_method": "scan"
+  },
+  "Uniform": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "Scan"
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-flattened-k50.json",
+    "sample_method": "noreplace"
+  },
+  "UCB": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "UCB",
+      "c": 1.0,
+      "init": 10.0
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+  "UniformExploration": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "UniformExploration"
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+    "EpsGreedy 4": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 4,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+  "EpsGreedy 4 Without Rebinning": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 23.0,
+      "min": 0.0,
+      "num_bins": 4,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": false,
+      "subtract": true
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+  "EpsGreedy 4 Without Subtraction": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 4,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": false
+    },
+    "budget": 50000,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+  "EpsGreedy 8": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+  "EpsGreedy 8 Without Rebinning": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 23.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": false,
+      "subtract": true
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+  "EpsGreedy 8 Without Subtraction": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": false
+    },
+    "budget": 50000,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+    "EpsGreedy 16": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 16,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+  "EpsGreedy 16 Without Rebinning": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 23.0,
+      "min": 0.0,
+      "num_bins": 16,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": false,
+      "subtract": true
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+  "EpsGreedy 16 Without Subtraction": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 16,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": false
+    },
+    "budget": 50000,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+  "EpsGreedy 32": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 32,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram.json",
+    "sample_method": "noreplace"
+  },
+  "EpsGreedy 32 Rebinning": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 23.0,
+      "min": 0.0,
+      "num_bins": 32,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": false,
+      "subtract": true
+    },
+    "budget": 500,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  },
+  "EpsGreedy 32 Without Subtraction": {
+    "scoring_params": {
+      "type": "relu",
+      "delay": 0
+    },
+    "sampling_params": {
+      "type": "synthetic"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 0.5,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 32,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": false
+    },
+    "budget": 50000,
+    "reps": 1,
+    "k": 1,
+    "index": "/localdisk2/approx-topk/index-synthetic-dendrogram-k50.json",
+    "sample_method": "noreplace"
+  }
+}

@@ -3,7 +3,7 @@ from typing import Dict, Callable
 from PIL import Image
 
 
-def synthetic_sampler(sample: str, sampling_params: Dict) -> float:
+def synthetic_sampler(sample: str, sampling_params: Dict) -> str:
     """
     For the Synthetic dataset, the sampler is just the identity function.
     Since we assume that the index_metadata is stored in the index_builder as string keys, we need to convert it to an integer.
@@ -13,7 +13,7 @@ def synthetic_sampler(sample: str, sampling_params: Dict) -> float:
     :param sampling_params: The sampling parameters. Not used in this case.
     :return: The sample itself.
     """
-    return float(sample)
+    return sample
 
 def image_directory_sampler(sample: str, sampling_params: Dict) -> Image.Image:
     """

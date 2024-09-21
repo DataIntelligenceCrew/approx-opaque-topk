@@ -39,11 +39,17 @@ class LimitedPQ:
         if self._heap.size() < self._k:
             return 0.0
         else:
-            s1 = -1 * self._heap.queue[1][0]  # Get the first tuple in heap, then negate its priority
-            s2 = -1 * self._heap.queue[2][0]
-            s = min(s1, s2)
-            #print(s, self._heap.queue[:4])
-            return s
+            if self._heap.size() == 0:
+                return 0.0
+            elif self._heap.size() == 1:
+                return -1 * self._heap.queue[0][0]
+            elif self._heap.size() == 2:
+                return -1 * self._heap.queue[1][0]
+            else:
+                s1 = -1 * self._heap.queue[1][0]  # Get the first tuple in heap, then negate its priority
+                s2 = -1 * self._heap.queue[2][0]
+                s = min(s1, s2)
+                return s
 
     def to_dict(self) -> Dict:
         """

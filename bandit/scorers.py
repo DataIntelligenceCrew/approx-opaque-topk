@@ -12,7 +12,7 @@ def get_relu_scorer(scorer_params: Dict) -> Callable:
     """
     def relu_scorer(sample, params):
         time.sleep(scorer_params['delay'])
-        return max(0.0, sample)
+        return max(0.0, float(sample))
     return relu_scorer
 
 

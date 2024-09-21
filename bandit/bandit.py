@@ -3,12 +3,15 @@ import math
 import random
 import time
 from typing import List, Callable, Union, Dict
+
+import numpy as np
+
 from bandit.index import IndexNode, IndexLeaf, get_index_from_dict
 from bandit.limited_pq import LimitedPQ
 
 
 def approx_top_k_bandit(index_filename: str, k: int, scoring_fn: Callable, scoring_params: Dict, sampling_fn: Callable,
-                        sampling_params: Dict, algorithm: str, algo_params: Dict, budget: Union[int, float]) -> List[Dict]:
+                        sampling_params: Dict, algorithm: str, algo_params: Dict, budget: Union[int, float], sample_method: str) -> List[Dict]:
     """
     Perform a run of approximate top-k bandit algorithm.
     This assumes that the index_builder has already been loaded, but not initialized with bandit-related metadata.
@@ -30,13 +33,17 @@ def approx_top_k_bandit(index_filename: str, k: int, scoring_fn: Callable, scori
                         - 'rebin_decay' for EpsGreedy. This is the decay factor whenever the histogram is re-binned.
                         - 'enlarge_factor' for EpsGreedy. This is the factor by which the histogram is enlarged when the max score is updated.
                         - 'enlarge_lowest' for EpsGreedy. This controls whether the smallest bin enlarges as S_(k) increases.
+    :param sample_method: The method for sampling from the leaf nodes. Either "scan", "replace", or "noreplace".
     :return: A list of dictionaries, each representing the result of an iteration.
     """
+    index_start_time = time.time()
     # Load index from file
     with open(index_filename, 'r') as file:
         index_dict = json.load(file)
-    index = get_index_from_dict(index_dict)
+    index = get_index_from_dict(index_dict, False if sample_method == "scan" else True)
     index.initialize_metadata(algorithm, algo_params)
+    index_end_time = time.time()
+    print("index time:", index_end_time - index_start_time)
     # Initialize bookkeeping index_metadata structures
     time_start = time.time()
     itr = 1
@@ -54,18 +61,27 @@ def approx_top_k_bandit(index_filename: str, k: int, scoring_fn: Callable, scori
                 break
         else:
             raise ValueError("Budget must be int (iterations) or float (time in seconds).")
+        # Check if index is empty
+        if index.children is None or len(index.children) == 0:
+            break
         # Choose leaf node and sample from it
         selected_leaf_idx: List[int] = select_leaf_arm(index, algorithm, algo_params, itr, pq.kth_best_score())
         leaf_node: IndexLeaf = index.get_grandchild(selected_leaf_idx)
-        sample_id, leaf_is_now_empty = leaf_node.sample_without_replacement()
+        if sample_method == "replace":
+            sample_id = leaf_node.sample_with_replacement()
+            leaf_is_now_empty = False
+        else:
+            sample_id, leaf_is_now_empty = leaf_node.sample_without_replacement()
         sample = sampling_fn(sample_id, sampling_params)
         score: float = scoring_fn(sample, scoring_params)
         # Update priority queue
         pq.insert(sample, score)
         # Update metadata over the index_builder
         index.update(algorithm, selected_leaf_idx, score, pq.kth_best_score())
+        # If the sample exhausted the leaf, then it needs to be cleaned up, including any recursively emptied parent
         if leaf_is_now_empty:
-            clean_empty_leaf(index, selected_leaf_idx)
+            subtract = algo_params['subtract'] if algorithm == 'EpsGreedy' else False
+            clean_empty_leaf(index, selected_leaf_idx, subtract)
         # Accumulate iteration result
         pq_elements, pq_scores = pq.get_heap()
         result = {
@@ -73,8 +89,8 @@ def approx_top_k_bandit(index_filename: str, k: int, scoring_fn: Callable, scori
             "arm": selected_leaf_idx,
             "sample_id": sample_id,
             "score": score,
-            "pq_elements": pq_elements,
-            "pq_scores": pq_scores,
+            "pq_elements": np.array(pq_elements),
+            "pq_scores": np.array(pq_scores),
             "time": time.time() - time_start,
             "stk": sum(pq_scores),
             "kls": pq_scores[-1] if len(pq_scores) >= k else 0.0
@@ -101,6 +117,8 @@ def select_leaf_arm(index: IndexNode, algorithm: str, algo_params: Dict, itr: in
         return select_leaf_arm_ucb(index, algo_params, itr)
     elif algorithm == "EpsGreedy":
         return select_leaf_arm_epsgreedy(index, algo_params, itr, kth_best_score)
+    elif algorithm == "Scan":
+        return select_leaf_arm_scan(index)
     else:
         raise ValueError("Unknown bandit algorithm.")
 
@@ -118,7 +136,13 @@ def select_leaf_arm_uniform(node: Union[IndexNode, IndexLeaf]) -> List[int]:
         children_arm: List[int] = select_leaf_arm_uniform(node.get_child_at(child_idx))
         return [child_idx] + children_arm
 
-def clean_empty_leaf(root, index_list):
+def select_leaf_arm_scan(node: Union[IndexNode, IndexLeaf]) -> List[int]:
+    if isinstance(node, IndexLeaf):
+        return []
+    elif isinstance(node, IndexNode):
+        return [0] + select_leaf_arm_scan(node.get_child_at(0))
+
+def clean_empty_leaf(root, index_list, subtract_child: bool = True):
     """
     Deletes the leaf node specified by index_list from the tree rooted at root.
     Recursively deletes parent nodes if they become empty after deletion.
@@ -138,6 +162,8 @@ def clean_empty_leaf(root, index_list):
     # Remove it from its parent's 'children' list
     while stack:
         parent, idx = stack.pop()
+        if "histogram" in parent.metadata and subtract_child:
+            parent.metadata['histogram'].subtract(parent.get_child_at(idx).metadata['histogram'])
         del parent.children[idx]
         if parent.children:
             # Parent still has children, stop recursion

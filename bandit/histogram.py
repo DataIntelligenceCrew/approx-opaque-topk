@@ -1,4 +1,5 @@
 from typing import List, Dict
+from typing_extensions import Self
 
 
 class Histogram:
@@ -90,6 +91,16 @@ class Histogram:
         self._bin_counts = new_bin_counts
         self._total_counts = new_total_counts
         self._bin_borders = new_bin_borders
+
+    def subtract(self, other: Self):
+        for b_self in range(self._num_bins):
+            for b_new in range(self._num_bins):
+                # Compute the overlap between the two bins
+                lo: float = max(self._bin_borders[b_self], other._bin_borders[b_new])
+                hi: float = min(self._bin_borders[b_self+1], other._bin_borders[b_new+1])
+                if hi > lo:
+                    cnt: float = self._bin_counts[b_self] * (hi - lo) / (self._bin_borders[b_self+1] - self._bin_borders[b_self])
+                    self._bin_counts[b_self] = max(self._bin_counts[b_self] - cnt, 0.0)
 
     def update_from_score(self, score: float, kth_largest_score: float):
         """

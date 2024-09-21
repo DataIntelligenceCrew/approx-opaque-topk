@@ -21,15 +21,16 @@ class IndexLeaf:
     The IDs are then used by the sampler methods to retrieve the actual index_metadata points from the index_metadata store.
     """
 
-    def __init__(self, children: List[str], metadata: Dict = None):
+    def __init__(self, children: List[str], metadata: Dict = None, shuffle: bool = True):
         """
         Initializes a new IndexLeaf with given children and metadata.
 
         :param children: A list of identifiers for the elements that belong to this leaf node.
         """
         self._n: int = len(children)  # The total number of children under this leaf node
-        self._children: List[str] = children  # Keep track of the children's IDs
-        random.shuffle(self._children)  # Randomly shuffle the children for sampling purposes
+        self.children: List[str] = children  # Keep track of the children's IDs
+        if shuffle:
+            random.shuffle(self.children)  # Randomly shuffle the children for sampling purposes
         self._next_sample_idx: int = 0  # Use a simple integer for walking through the shuffle
         self.metadata: Dict = metadata if metadata is not None else dict()  # Any information attached to this node
 
@@ -43,7 +44,7 @@ class IndexLeaf:
         if self._next_sample_idx >= self._n:  # No unseen child remains
             return None, True
         else:  # There are unseen children left
-            sample: str = self._children[self._next_sample_idx]
+            sample: str = self.children[self._next_sample_idx]
             self._next_sample_idx += 1
             return sample, self.remaining_size() <= 0
 
@@ -55,7 +56,7 @@ class IndexLeaf:
 
         :return: The ID of a randomly sampled child, or None if there is no child.
         """
-        return random.choice(self._children)
+        return random.choice(self.children)
 
     def total_size(self) -> int:
         """
@@ -86,7 +87,7 @@ class IndexLeaf:
         :param include_children: Whether to include the (remaining) children in the dictionary representation.
         :return: A dictionary representation of the leaf node.
         """
-        return {"children": self._children[self._next_sample_idx:] if include_children else None, "histogram": self.metadata['histogram'].to_dict()}
+        return {"children": self.children[self._next_sample_idx:] if include_children else None, "histogram": self.metadata['histogram'].to_dict()}
 
     def update(self, algorithm: str, selected_leaf_idx: List[int], score: float, kth_largest_score: float):
         """
@@ -98,11 +99,13 @@ class IndexLeaf:
         :param kth_largest_score: The current S_(k) value.
         """
         if algorithm == "UniformExploration":
-                pass
+            pass
         elif algorithm == "UCB":
             self._update_ucb(selected_leaf_idx, score)
         elif algorithm == "EpsGreedy":
                 self._update_epsgreedy(selected_leaf_idx, score, kth_largest_score)
+        elif algorithm == "Scan":
+            pass
         else:
             raise ValueError(f"Unsupported bandit algorithm: {algorithm}")
 
@@ -132,6 +135,8 @@ class IndexLeaf:
             self._initialize_ucb_metadata(params)
         elif algorithm == "EpsGreedy":
             self._initialize_epsgreedy_metadata(params)
+        elif algorithm == "Scan":
+            pass
         else:
             raise ValueError(f"Unsupported bandit algorithm: {algorithm}")
 
@@ -203,6 +208,8 @@ class IndexNode:
             self._initialize_ucb_metadata(params)
         elif algorithm == "EpsGreedy":
             self._initialize_epsgreedy_metadata(params)
+        elif algorithm == "Scan":
+            pass
         else:
             raise ValueError(f"Unsupported bandit algorithm: {algorithm}")
 
@@ -236,6 +243,8 @@ class IndexNode:
             self.update_ucb(algorithm, selected_leaf_idx, score, kth_largest_score)
         elif algorithm == "EpsGreedy":
             self.update_epsgreedy(algorithm, selected_leaf_idx, score, kth_largest_score)
+        elif algorithm == "Scan":
+            pass
         else:
             raise ValueError(f"Unsupported bandit algorithm: {algorithm}")
 
@@ -275,15 +284,16 @@ def load_index_from_json(filename: str) -> IndexNode:
     with open (filename, 'r') as json_file:
         return json.load(json_file)
 
-def get_index_from_dict(dict_: Dict) -> Union[IndexNode, IndexLeaf]:
+def  get_index_from_dict(dict_: Dict, shuffle_elements: bool) -> Union[IndexNode, IndexLeaf]:
     """
     Get an index_builder from a dictionary representation.
 
+    :param shuffle_elements: Whether to store the elements in leaf nodes in a shuffled manner or not.
     :param dict_: The dictionary representation of the index_builder.
     :return: The index_builder created from the dictionary.
     """
     if isinstance(dict_['children'][0], dict):
-        children = [get_index_from_dict(child) for child in dict_['children']]
+        children = [get_index_from_dict(child, shuffle_elements) for child in dict_['children']]
     else:
-        return IndexLeaf(dict_['children'])
+        return IndexLeaf(dict_['children'], metadata = None, shuffle = shuffle_elements)
     return IndexNode(children)

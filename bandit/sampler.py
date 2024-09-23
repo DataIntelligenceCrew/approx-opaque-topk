@@ -1,30 +1,28 @@
-from typing import Dict, Callable
+from typing import Dict, Callable, Tuple, List
 
 from PIL import Image
 
 
-def synthetic_sampler(sample: str, sampling_params: Dict) -> str:
+def synthetic_sampler(sample_ids: List[str], sampling_params: Dict) -> List[float]:
     """
     For the Synthetic dataset, the sampler is just the identity function.
     Since we assume that the index_metadata is stored in the index_builder as string keys, we need to convert it to an integer.
 
-    :param sample: Information stored for a sample in the index. For a synthetic index, there are three fields:
-                   'id' (unique 0-indexed int), 'score' (float), and 'rank' (unique 1-indexed int).
+    :param sample_ids: A list of unique string IDs to identify elements in the index and in storage.
     :param sampling_params: The sampling parameters. Not used in this case.
-    :return: The sample itself.
+    :return: A list of the float representation of the strings.
     """
-    return sample
+    return [float(id_) for id_ in sample_ids]
 
-def image_directory_sampler(sample: str, sampling_params: Dict) -> Image.Image:
+def image_directory_sampler(sample_ids: List[str], sampling_params: Dict) -> List[Image.Image]:
     """
-    For image datasets, the sampler retrieves the image from the directory based on its filename.
+    For image datasets, the sampler retrieves the images from the directory based on its filename.
 
-    :param sample: Information stored for a sample in the index. For an image index, there are two fields:
-                   'filename' (unique str),
+    :param sample_ids: For image elements, the sample IDs are filenames.
     :param sampling_params: The sampling parameters. Here, it should have 'directory_path' key.
-    :return: The image as a PIL Image object.
+    :return: A list of PIL images.
     """
-    return Image.open(sampling_params['directory_path'] + sample)
+    return [Image.open(sampling_params['directory_path'] + id_) for id_ in sample_ids]
 
 def get_sampler_from_params(sampling_params: Dict) -> Callable:
     """

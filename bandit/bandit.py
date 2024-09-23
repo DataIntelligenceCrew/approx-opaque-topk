@@ -3,15 +3,15 @@ import math
 import random
 import time
 from typing import List, Callable, Union, Dict
-
 import numpy as np
-
 from bandit.index import IndexNode, IndexLeaf, get_index_from_dict
 from bandit.limited_pq import LimitedPQ
+from bandit.scorers import preprocess_scoring_params
 
 
 def approx_top_k_bandit(index_filename: str, k: int, scoring_fn: Callable, scoring_params: Dict, sampling_fn: Callable,
-                        sampling_params: Dict, algorithm: str, algo_params: Dict, budget: Union[int, float], sample_method: str) -> List[Dict]:
+                        sampling_params: Dict, algorithm: str, algo_params: Dict, budget: Union[int, float],
+                        sample_method: str, batch_size: int) -> List[Dict]:
     """
     Perform a run of approximate top-k bandit algorithm.
     This assumes that the index_builder has already been loaded, but not initialized with bandit-related metadata.
@@ -34,12 +34,16 @@ def approx_top_k_bandit(index_filename: str, k: int, scoring_fn: Callable, scori
                         - 'enlarge_factor' for EpsGreedy. This is the factor by which the histogram is enlarged when the max score is updated.
                         - 'enlarge_lowest' for EpsGreedy. This controls whether the smallest bin enlarges as S_(k) increases.
     :param sample_method: The method for sampling from the leaf nodes. Either "scan", "replace", or "noreplace".
+    :param batch_size: Sample up to this number of elements from the cluster at a time.
     :return: A list of dictionaries, each representing the result of an iteration.
     """
+    # For some scoring functions, preprocessing params is necessary
+    scoring_params = preprocess_scoring_params(scoring_params)
     index_start_time = time.time()
     # Load index from file
     with open(index_filename, 'r') as file:
         index_dict = json.load(file)
+    # Shuffle the clusters in the index if sample method is random, otherwise leave insertion order
     index = get_index_from_dict(index_dict, False if sample_method == "scan" else True)
     index.initialize_metadata(algorithm, algo_params)
     index_end_time = time.time()
@@ -68,36 +72,44 @@ def approx_top_k_bandit(index_filename: str, k: int, scoring_fn: Callable, scori
         selected_leaf_idx: List[int] = select_leaf_arm(index, algorithm, algo_params, itr, pq.kth_best_score())
         leaf_node: IndexLeaf = index.get_grandchild(selected_leaf_idx)
         if sample_method == "replace":
-            sample_id = leaf_node.sample_with_replacement()
+            sample_ids = leaf_node.sample_with_replacement(batch_size)
             leaf_is_now_empty = False
+        elif sample_method == "noreplace" or sample_method == "scan":
+            sample_ids, leaf_is_now_empty = leaf_node.sample_without_replacement(batch_size)
         else:
-            sample_id, leaf_is_now_empty = leaf_node.sample_without_replacement()
-        sample = sampling_fn(sample_id, sampling_params)
-        score: float = scoring_fn(sample, scoring_params)
-        # Update priority queue
-        pq.insert(sample, score)
-        # Update metadata over the index_builder
-        index.update(algorithm, selected_leaf_idx, score, pq.kth_best_score())
-        # If the sample exhausted the leaf, then it needs to be cleaned up, including any recursively emptied parent
-        if leaf_is_now_empty:
-            subtract = algo_params['subtract'] if algorithm == 'EpsGreedy' else False
-            clean_empty_leaf(index, selected_leaf_idx, subtract)
-        # Accumulate iteration result
-        pq_elements, pq_scores = pq.get_heap()
-        result = {
-            "iteration": itr,
-            "arm": selected_leaf_idx,
-            "sample_id": sample_id,
-            "score": score,
-            "pq_elements": np.array(pq_elements),
-            "pq_scores": np.array(pq_scores),
-            "time": time.time() - time_start,
-            "stk": sum(pq_scores),
-            "kls": pq_scores[-1] if len(pq_scores) >= k else 0.0
-        }
-        iter_results.append(result)
-        # Increment iteration counter
-        itr += 1
+            raise ValueError
+        # Obtain the actual objects for the sampled IDs and score them
+        inputs_to_scorers = sampling_fn(sample_ids, sampling_params)
+        scores: List[float] = scoring_fn(inputs_to_scorers, scoring_params)
+        # For each score, update priority queue & handle logging
+        print(itr)
+        for idx in range(len(scores)):
+            sample_id = sample_ids[idx]
+            sample_score = scores[idx]
+            # Update priority queue
+            pq.insert(sample_id, sample_score)
+            # Update metadata over the index_builder
+            index.update(algorithm, selected_leaf_idx, sample_score, pq.kth_best_score())
+            # If the sample exhausted the leaf, then it needs to be cleaned up, including any recursively emptied parent
+            if leaf_is_now_empty:
+                subtract = algo_params['subtract'] if algorithm == 'EpsGreedy' else False
+                clean_empty_leaf(index, selected_leaf_idx, subtract)
+            # Accumulate iteration result
+            pq_elements, pq_scores = pq.get_heap()
+            result = {
+                "iteration": itr,
+                "arm": selected_leaf_idx,
+                "sample_id": sample_id,
+                "score": sample_score,
+                "pq_elements": np.array(pq_elements),
+                "pq_scores": np.array(pq_scores),
+                "time": time.time() - time_start,
+                "stk": sum(pq_scores),
+                "kls": pq_scores[-1] if len(pq_scores) >= k else 0.0
+            }
+            iter_results.append(result)
+            # Increment iteration
+            itr += 1
     return iter_results
 
 def select_leaf_arm(index: IndexNode, algorithm: str, algo_params: Dict, itr: int, kth_best_score: float) -> List[int]:
@@ -216,6 +228,11 @@ def select_leaf_arm_epsgreedy(node: IndexNode, algo_params: Dict, itr: int, kth_
         alpha = algo_params['alpha']
         eps = alpha * math.pow(itr, -1.0/3.0)
         rand = random.random()
+        # Initialization: If any children have not been visited yet, visit it once
+        for idx, child in enumerate(node.children):
+            if child.metadata['histogram'].get_count() == 0.0:
+                arm = [idx] + select_leaf_arm_epsgreedy(node.get_child_at(idx), algo_params, itr, kth_best_score)
+                return arm
         if rand > eps:  # Exploitation
             children = node.children
             max_gain = 0.0

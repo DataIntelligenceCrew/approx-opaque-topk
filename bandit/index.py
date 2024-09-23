@@ -34,7 +34,24 @@ class IndexLeaf:
         self._next_sample_idx: int = 0  # Use a simple integer for walking through the shuffle
         self.metadata: Dict = metadata if metadata is not None else dict()  # Any information attached to this node
 
-    def sample_without_replacement(self) -> Tuple[Union[str, None], bool]:
+    def sample_without_replacement(self, batch_size: int) -> Tuple[List[str], bool]:
+        """
+        Performs multiple samplings without replacement from the children of this leaf node.
+        The sample walks through the shuffled list of children up to batch_size indices.
+
+        :param batch_size: The number of samples to return.
+        :return: The IDs of the randomly sampled children, and whether this sample made this leaf empty.
+        """
+        samples = []
+        is_now_empty = False
+        for _ in range(batch_size):
+            sample, emptied = self.sample_one_without_replacement()
+            if sample is not None:
+                samples.append(sample)
+            is_now_empty = is_now_empty or emptied
+        return samples, is_now_empty
+
+    def sample_one_without_replacement(self) -> Tuple[Union[str, None], bool]:
         """
         Performs sampling without replacement from the children of this leaf node.
         The sample is implemented as simply a walk through the shuffled list of children by an index_builder.
@@ -48,15 +65,16 @@ class IndexLeaf:
             self._next_sample_idx += 1
             return sample, self.remaining_size() <= 0
 
-    def sample_with_replacement(self) -> Union[str, None]:
+    def sample_with_replacement(self, batch_size: int) -> List[str]:
         """
         Performs sampling with replacement from ths children of this leaf node.
         The sample is chosen from the initial set of children.
         May behave unexpectedly if sample_without_replacement and sample_with_replacement are intermixed.
 
+        :param batch_size: The number of samples to return.
         :return: The ID of a randomly sampled child, or None if there is no child.
         """
-        return random.choice(self.children)
+        return random.sample(self.children, batch_size)
 
     def total_size(self) -> int:
         """

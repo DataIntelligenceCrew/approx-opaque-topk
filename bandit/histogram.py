@@ -156,6 +156,9 @@ class Histogram:
     def __repr__(self):
         return str(self.to_dict())
 
+    def get_count(self) -> float:
+        return self._total_counts
+
 def uniformly_divide_range(min_value: float, max_value: float, num_bins: int) -> List[float]:
     """
     Given an interval of two numbers, uniformly divides the interval into a specified number of bins.

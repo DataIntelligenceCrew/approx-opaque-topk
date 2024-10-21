@@ -1,39 +1,5 @@
 {
-  "Scan (Best Case)": {
-    "scoring_params": {
-      "type": "relu",
-      "delay": 0
-    },
-    "sampling_params": {
-      "type": "synthetic"
-    },
-    "algo_params": {
-      "type": "Scan"
-    },
-    "budget": 500,
-    "reps": 1,
-    "k": 100,
-    "index": "/localdisk2/approx-topk/index-synthetic-flattened-k50.json",
-    "sample_method": "scan"
-  },
-  "Scan (Worst Case)": {
-    "scoring_params": {
-      "type": "relu",
-      "delay": 0
-    },
-    "sampling_params": {
-      "type": "synthetic"
-    },
-    "algo_params": {
-      "type": "Scan"
-    },
-    "budget": 50000,
-    "reps": 1,
-    "k": 100,
-    "index": "/localdisk2/approx-topk/index-synthetic-flattened-asc.json",
-    "sample_method": "scan"
-  },
-  "Uniform Sample": {
+  "UniformSample": {
     "scoring_params": {
       "type": "relu",
       "delay": 0

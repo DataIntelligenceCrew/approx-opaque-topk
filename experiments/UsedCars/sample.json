@@ -1,0 +1,18 @@
+{
+  "scoring_params": {
+    "type": "xgboost",
+    "model_path": "/localdisk2/approx-topk/Models/usedcars_xgboost.json",
+    "exclude_cols": ["listing_id", "price"]
+  },
+  "sampling_params": {
+    "type": "dataframe",
+    "file": "/localdisk2/approx-topk/Data/UsedCars/subset.csv",
+    "id_col": "listing_id",
+    "exclude_cols": ["price"]
+  },
+  "k": 500,
+  "index_params": {
+    "file": "/localdisk2/approx-topk/Index/UsedCars/subset_flat.json"
+  },
+  "batch_size": 1
+}

@@ -1,0 +1,16 @@
+{
+  "scoring_params": {
+    "type": "classify",
+    "target_idx": 897,
+    "device": "cuda:1"
+  },
+  "sampling_params": {
+    "type": "image_directory",
+    "directory_path": "<root-dir>/Data/ImageNet/"
+  },
+  "k": 1000,
+  "index_file": {
+    "file": "<root-dir>/Index/ImageNet/flat.json"
+  },
+  "batch_size": 350
+}

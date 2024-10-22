@@ -1,0 +1,26 @@
+{
+  "UCB": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 897,
+      "device": "cuda:1"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<root-dir>/Data/ImageNet/"
+    },
+    "algo_params": {
+      "type": "UCB",
+      "c": 1.0,
+      "init": 0.5
+    },
+    "budget": 320291,
+    "reps": 1,
+    "k": 1000,
+    "index_file": {
+      "file": "<root-dir>/Index/ImageNet/dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 100
+  }
+}

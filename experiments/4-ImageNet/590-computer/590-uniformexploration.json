@@ -1,0 +1,24 @@
+{
+  "UniformExploration": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 590,
+      "device": "cuda:2"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<root-dir>/Data/ImageNet"
+    },
+    "algo_params": {
+      "type": "UniformExploration"
+    },
+    "budget": 320291,
+    "reps": 1,
+    "k": 1000,
+    "index_params": {
+      "file": "<root-dir>/Index/ImageNet/dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 100
+  }
+}

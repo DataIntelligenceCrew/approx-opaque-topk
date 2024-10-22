@@ -1,0 +1,14 @@
+{
+  "scoring_params": {
+    "type": "relu",
+    "delay": 0
+  },
+  "sampling_params": {
+    "type": "synthetic"
+  },
+  "k": 10,
+  "index_params": {
+    "file": "<root-dir>/Index/Synthetic/flat.json"
+  },
+  "batch_size": 1
+}

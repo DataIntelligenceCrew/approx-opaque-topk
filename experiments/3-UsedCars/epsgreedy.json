@@ -1,0 +1,34 @@
+{
+  "EpsGreedy": {
+    "scoring_params": {
+      "type": "xgboost",
+      "model_path": "<root-dir>/Models/usedcars_v2.json",
+      "exclude_cols": ["listing_id", "price"]
+    },
+    "sampling_params": {
+      "type": "dataframe",
+      "file": "<root-dir>/Data/UsedCars/subset.csv",
+      "id_col": "listing_id",
+      "exclude_cols": ["price"]
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 1.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 100000,
+    "reps": 5,
+    "k": 250,
+    "index_params": {
+      "file": "<root-dir>/Index/UsedCars/dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 1
+  }
+}

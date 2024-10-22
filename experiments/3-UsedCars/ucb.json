@@ -2,7 +2,7 @@
   "UCB": {
     "scoring_params": {
       "type": "xgboost",
-      "model_path": "<root-dir>/Models/usedcars_v2.json",
+      "model_path": "<root-dir>/Models/usedcars.json",
       "exclude_cols": ["listing_id", "price"]
     },
     "sampling_params": {

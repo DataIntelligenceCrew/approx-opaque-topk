@@ -1,4 +1,4 @@
-# Approximating Opaque Top-$k$ Queries
+# Approximating Opaque Top-k Queries
 
 This repository contains code, experimental configs, data, and documentation. 
 

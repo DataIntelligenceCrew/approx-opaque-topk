@@ -1,17 +1,14 @@
 from datetime import time
-import random
-from typing import Dict, Callable, List, Any
-import torch
-import torchvision.transforms as transforms
-from PIL.Image import Image
-from requests.packages import target
-from torchvision import models
-import json
-import urllib.request
-
 import time
+from typing import Dict, Callable, List, Any
 
+import pandas as pd
+from PIL.Image import Image
+import torch
+from torchvision import models
 from torchvision.models import ResNeXt101_64X4D_Weights
+import torchvision.transforms as transforms
+import xgboost as xgb
 
 
 def get_relu_scorer(scorer_params: Dict) -> Callable:
@@ -24,16 +21,6 @@ def get_relu_scorer(scorer_params: Dict) -> Callable:
         time.sleep(scorer_params['delay'] * len(scorer_inputs))
         return [max(0.0, float(x)) for x in scorer_inputs]
     return relu_scorer
-
-
-def get_random_scorer(scorer_params: Dict) -> Callable:
-    """
-    Random scoring function is used to simulate a scenario where the index has no correlation with scores.
-    """
-    def random_scorer(scorer_inputs: List[Any], params: Dict) -> List[float]:
-        time.sleep(scorer_params['delay'] * len(scorer_inputs))
-        return [random.random() for _ in range(len(scorer_inputs))]
-    return random_scorer
 
 
 def get_imagenet_classifier_scorer(scorer_params: Dict) -> Callable:
@@ -93,6 +80,39 @@ def get_imagenet_classifier_scorer(scorer_params: Dict) -> Callable:
     return imagenet_classifier_scorer
 
 
+def get_xgboost_scorer(scorer_params: Dict) -> Callable:
+    """
+    The XGBoost scorer loads a pre-trained XGBoost model and uses it to regress the input data.
+
+    :param scorer_params: A dictionary that contains the 'model_path' field, which maps to the path of the XGBoost model.
+    :return: An XGBoost scoring function.
+    """
+    # Load the XGBoost model from the specified path
+    model_path = scorer_params['model_path']
+    model = xgb.Booster()
+    model.load_model(model_path)
+    exclude_cols = scorer_params['exclude_cols']
+
+    def xgboost_scorer(scorer_inputs: List[pd.DataFrame], params: Dict) -> List[float]:
+        """
+        :param scorer_inputs: A list of DataFrames, where each DataFrame is a row of input data.
+        :param params: A dictionary that contains the 'model_path' field.
+        :return: A list of predictions for each input DataFrame.
+        """
+        predictions = []
+
+        for df in scorer_inputs:
+            # Convert the DataFrame into a DMatrix which XGBoost expects
+            dmatrix = xgb.DMatrix(df.drop(exclude_cols, axis=1, errors='ignore'))
+            # Predict using the loaded model
+            pred = model.predict(dmatrix)
+            # Store the predictions for this DataFrame
+            predictions.append(pred.tolist()[0])  # Convert numpy array to list
+        return predictions
+
+    return xgboost_scorer
+
+
 def get_scorer_from_params(scorer_params: Dict) -> Callable:
     """
     Returns the scoring function based on the parameters.
@@ -101,20 +121,9 @@ def get_scorer_from_params(scorer_params: Dict) -> Callable:
     """
     if scorer_params['type'] == 'relu':
         return get_relu_scorer(scorer_params)
-    elif scorer_params['type'] == 'random':
-        return get_random_scorer(scorer_params)
     elif scorer_params['type'] == 'classify':
         return get_imagenet_classifier_scorer(scorer_params)
+    elif scorer_params['type'] == 'xgboost':
+        return get_xgboost_scorer(scorer_params)
     else:
         raise ValueError(f"Unknown scorer type: {scorer_params['type']}")
-
-
-def preprocess_scoring_params(scorer_params: Dict) -> Dict:
-    """
-    Pre-processes the scorer params to initialize any instance-specific or randomized element.
-    :param scorer_params: Input scorer params.
-    :return: Preprocessed scorer params.
-    """
-    if scorer_params['type'] == 'classify' and scorer_params['target_idx'] == 'random':
-        scorer_params['target_idx'] = random.randrange(1000)
-    return scorer_params

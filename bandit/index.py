@@ -1,6 +1,8 @@
 import json
 import random
 from typing import List, Dict, Union, Tuple
+
+import pandas as pd
 from typing_extensions import Self
 
 from bandit.histogram import Histogram
@@ -21,16 +23,22 @@ class IndexLeaf:
     The IDs are then used by the sampler methods to retrieve the actual index_metadata points from the index_metadata store.
     """
 
-    def __init__(self, children: List[str], metadata: Dict = None, shuffle: bool = True):
+    def __init__(self, children: Union[List[str], pd.DataFrame], metadata: Dict = None, shuffle: bool = True):
         """
         Initializes a new IndexLeaf with given children and metadata.
 
         :param children: A list of identifiers for the elements that belong to this leaf node.
         """
-        self._n: int = len(children)  # The total number of children under this leaf node
+        if isinstance(children, List):
+            self._n: int = len(children)  # The total number of children under this leaf node
+        elif isinstance(children, pd.DataFrame):
+            self._n: int = children.shape[0]
         self.children: List[str] = children  # Keep track of the children's IDs
         if shuffle:
-            random.shuffle(self.children)  # Randomly shuffle the children for sampling purposes
+            if isinstance(self.children, List):
+                random.shuffle(self.children)  # Randomly shuffle the children for sampling purposes
+            elif isinstance(self.children, pd.DataFrame):
+                self.children = self.children.sample(frac=1)
         self._next_sample_idx: int = 0  # Use a simple integer for walking through the shuffle
         self.metadata: Dict = metadata if metadata is not None else dict()  # Any information attached to this node
 
@@ -51,7 +59,7 @@ class IndexLeaf:
             is_now_empty = is_now_empty or emptied
         return samples, is_now_empty
 
-    def sample_one_without_replacement(self) -> Tuple[Union[str, None], bool]:
+    def sample_one_without_replacement(self) -> Tuple[Union[str, pd.DataFrame, None], bool]:
         """
         Performs sampling without replacement from the children of this leaf node.
         The sample is implemented as simply a walk through the shuffled list of children by an index_builder.
@@ -61,7 +69,12 @@ class IndexLeaf:
         if self._next_sample_idx >= self._n:  # No unseen child remains
             return None, True
         else:  # There are unseen children left
-            sample: str = self.children[self._next_sample_idx]
+            if isinstance(self.children, List):
+                sample: str = self.children[self._next_sample_idx]
+            elif isinstance(self.children, pd.DataFrame):
+                sample: pd.DataFrame = self.children.iloc[self._next_sample_idx]
+            else:
+                raise ValueError("Unsupported children type")
             self._next_sample_idx += 1
             return sample, self.remaining_size() <= 0
 
@@ -74,7 +87,13 @@ class IndexLeaf:
         :param batch_size: The number of samples to return.
         :return: The ID of a randomly sampled child, or None if there is no child.
         """
-        return random.sample(self.children, batch_size)
+        if isinstance(self.children, List):
+            return random.sample(self.children, batch_size)
+        elif isinstance(self.children, pd.DataFrame):
+            idxs = random.choices(self.children.index, k=batch_size)
+            return self.children.iloc[idxs]
+        else:
+            raise ValueError("Unsupported children type")
 
     def total_size(self) -> int:
         """
@@ -294,7 +313,7 @@ def store_index_to_json(index: IndexNode, filename: str):
 
 def load_index_from_json(filename: str) -> IndexNode:
     """
-    Load the index_builder from a JSON file. TODO: implementation.
+    Load the index_builder from a JSON file.
 
     :param filename: The name of the JSON file.
     :return: The index_builder loaded.
@@ -310,7 +329,12 @@ def  get_index_from_dict(dict_: Dict, shuffle_elements: bool) -> Union[IndexNode
     :param dict_: The dictionary representation of the index_builder.
     :return: The index_builder created from the dictionary.
     """
-    if isinstance(dict_['children'][0], dict):
+    if isinstance(dict_['children'], str):
+        df = pd.read_csv(dict_['children'])
+        print(df)
+        result = IndexLeaf(df, metadata = None, shuffle = shuffle_elements)
+        return result
+    elif isinstance(dict_['children'][0], dict):
         children = [get_index_from_dict(child, shuffle_elements) for child in dict_['children']]
     else:
         return IndexLeaf(dict_['children'], metadata = None, shuffle = shuffle_elements)

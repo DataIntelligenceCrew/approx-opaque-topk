@@ -1,5 +1,6 @@
-from typing import Dict, Callable, Tuple, List
+from typing import Dict, Callable, List
 
+import pandas as pd
 from PIL import Image
 
 
@@ -14,6 +15,7 @@ def synthetic_sampler(sample_ids: List[str], sampling_params: Dict) -> List[floa
     """
     return [float(id_) for id_ in sample_ids]
 
+
 def image_directory_sampler(sample_ids: List[str], sampling_params: Dict) -> List[Image.Image]:
     """
     For image datasets, the sampler retrieves the images from the directory based on its filename.
@@ -23,6 +25,22 @@ def image_directory_sampler(sample_ids: List[str], sampling_params: Dict) -> Lis
     :return: A list of PIL images.
     """
     return [Image.open(sampling_params['directory_path'] + id_) for id_ in sample_ids]
+
+
+def get_dataframe_sampler(sampling_params: Dict) -> Callable:
+    """
+    For tabular datasets, the sampler retrieves the data from the dataframe based on the index.
+
+    :param sampling_params: The sampling parameters. Here, it should have 'file', 'id_col', and 'exclude_cols' keys.
+    :return: A function that returns a list of dataframes.
+    """
+    df = pd.read_csv(sampling_params['file']).drop(labels=sampling_params['exclude_cols'], axis=1, errors='ignore')
+    df.set_index(sampling_params['id_col'], inplace=True)
+    def dataframe_sampler(sample_ids: List[str], sampling_params: Dict) -> List[pd.DataFrame]:
+        results = [df.loc[id_].to_frame().T for id_ in sample_ids]
+        return results
+    return dataframe_sampler
+
 
 def get_sampler_from_params(sampling_params: Dict) -> Callable:
     """
@@ -35,5 +53,7 @@ def get_sampler_from_params(sampling_params: Dict) -> Callable:
         return synthetic_sampler
     elif sampling_params['type'] == 'image_directory':
         return image_directory_sampler
+    elif sampling_params['type'] == 'dataframe':
+        return get_dataframe_sampler(sampling_params)
     else:
         raise ValueError(f"Sampler type {sampling_params['type']} not supported.")

@@ -2,7 +2,7 @@ import argparse
 import json
 from typing import Dict, List, Tuple, Callable
 
-from bandit.sampler import get_sampler_from_params
+from bandit.samplers import get_sampler_from_params
 from bandit.scorers import get_scorer_from_params
 
 """

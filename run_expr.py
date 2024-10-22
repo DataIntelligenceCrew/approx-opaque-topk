@@ -1,10 +1,11 @@
 import argparse
 import json
+from typing import Set, Dict, List
 
 import numpy as np
 
 from bandit.bandit import approx_top_k_bandit
-from bandit.sampler import get_sampler_from_params
+from bandit.samplers import get_sampler_from_params
 from bandit.scorers import get_scorer_from_params
 
 
@@ -29,17 +30,17 @@ if __name__ == '__main__':
     # Import gt results
     with open(args.gt_filename, 'r') as file:
         gt_result = json.load(file)
-    gt_solution = set(gt_result['gt_solution'])  # The ground truth solution set
-    gt_rankings = gt_result['gt_rankings']  # A mapping from element ID to ground truth ranking
-    gt_max_rank = gt_result['n']
-    gt_k = len(gt_solution)
+    gt_solution: Set = set(gt_result['gt_solution'])  # The ground truth solution set
+    gt_rankings: Dict[str, int] = gt_result['gt_rankings']  # A mapping from element ID to ground truth ranking
+    gt_max_rank: int = gt_result['n']
+    gt_k: int = len(gt_solution)
 
     # A dictionary containing all configs' results
     config_stats = dict()
 
     for expr_name, expr_config in all_configs.items():  # Run all remaining experiments
-        expr_reps = expr_config['reps']
-        expr_budget = expr_config['budget']
+        expr_reps: int = expr_config['reps']
+        expr_budget: int = expr_config['budget']
 
         for rep in range(expr_reps):  # Repeat for specified number of runs
             # Run bandit
@@ -60,13 +61,13 @@ if __name__ == '__main__':
             )
 
             # Compute metrics
-            rep_stks = np.array([x['STK'] for x in run_result['iter_results']])
-            rep_klss = np.array([x['KLS'] for x in run_result['iter_results']])
-            rep_times = np.array([x['time'] for x in run_result['iter_results']])
-            rep_precisions = np.array([x['Precision@K'] for x in run_result['iter_results']])
-            rep_recalls = np.array([x['Recall@K'] for x in run_result['iter_results']])
-            rep_avg_ranks = np.array([x['AvgRank'] for x in run_result['iter_results']])
-            rep_worst_ranks = np.array([x['WorstRank'] for x in run_result['iter_results']])
+            rep_stks: np.array = np.array([x['STK'] for x in run_result['iter_results']])
+            rep_klss: np.array = np.array([x['KLS'] for x in run_result['iter_results']])
+            rep_times: np.array = np.array([x['time'] for x in run_result['iter_results']])
+            rep_precisions: np.array = np.array([x['Precision@K'] for x in run_result['iter_results']])
+            rep_recalls: np.array = np.array([x['Recall@K'] for x in run_result['iter_results']])
+            rep_avg_ranks: np.array = np.array([x['AvgRank'] for x in run_result['iter_results']])
+            rep_worst_ranks: np.array = np.array([x['WorstRank'] for x in run_result['iter_results']])
 
             # Create dictionary entry if not exists
             if rep == 0:
@@ -93,14 +94,14 @@ if __name__ == '__main__':
 
     # Average out all metrics, then convert numpy arrays to list for serialization
     for expr_name, expr_results in config_stats.items():
-        expr_reps = expr_results['reps']
-        config_stats[expr_name]["STK"] = list(config_stats[expr_name]["STK"] / float(expr_reps))
-        config_stats[expr_name]["KLS"] = list(config_stats[expr_name]["KLS"] / float(expr_reps))
-        config_stats[expr_name]["time"] = list(config_stats[expr_name]["time"] / float(expr_reps))
-        config_stats[expr_name]["Precision@K"] = list(config_stats[expr_name]["Precision@K"] / float(expr_reps))
-        config_stats[expr_name]["Recall@K"] = list(config_stats[expr_name]["Recall@K"] / float(expr_reps))
-        config_stats[expr_name]["AvgRank"] = list(config_stats[expr_name]["AvgRank"] / float(expr_reps))
-        config_stats[expr_name]["WorstRank"] = list(config_stats[expr_name]["WorstRank"] / float(expr_reps))
+        expr_reps: int = expr_results['reps']
+        config_stats[expr_name]["STK"]: List[float] = list(config_stats[expr_name]["STK"] / float(expr_reps))
+        config_stats[expr_name]["KLS"]: List[float] = list(config_stats[expr_name]["KLS"] / float(expr_reps))
+        config_stats[expr_name]["time"]: List[float] = list(config_stats[expr_name]["time"] / float(expr_reps))
+        config_stats[expr_name]["Precision@K"]: List[float] = list(config_stats[expr_name]["Precision@K"] / float(expr_reps))
+        config_stats[expr_name]["Recall@K"]: List[float] = list(config_stats[expr_name]["Recall@K"] / float(expr_reps))
+        config_stats[expr_name]["AvgRank"]: List[float] = list(config_stats[expr_name]["AvgRank"] / float(expr_reps))
+        config_stats[expr_name]["WorstRank"]: List[float] = list(config_stats[expr_name]["WorstRank"] / float(expr_reps))
 
     # Save results
     with open(args.output_filename, 'w') as file:

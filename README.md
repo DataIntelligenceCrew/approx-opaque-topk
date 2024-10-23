@@ -44,14 +44,14 @@ Fields that may need to be changed for reproducibility are starred.
 
 Each config has the following fields:
 1. `scoring_params` (obj): Parameters used to construct the scoring function. Has a `type` field and additional fields that differ per scoring function. 
-   - `relu`: The relu function $f(x) = max(0, x)$. 
+   - `relu`: The relu function f(x) = max(0, x). 
      1. `delay` (float): Delay, in seconds, that is artificially injected per scoring function evaluation to simulate expensive scores. 
    - `classify`: The confidence that a pre-trained ResNeXT classifier thinks an image belongs to a target class idx. 
      1. `target_idx` (int): An integer ranging from 0 to 999, representing the corresponding ImageNet label. 
      2. *`device` (str): The CUDA device used to run inference. 
    - `xgboost`: The regression output by an XGBoost regression model. 
      1. *`model_path` (str): The path where the pre-trained model is stored. 
-     2. `exclude_cols` (list[str]): The columns in the dataset that are not passed into the model, generally includes the $y$ and id columns. 
+     2. `exclude_cols` (list[str]): The columns in the dataset that are not passed into the model, generally includes the y and id columns. 
 2. `sampling_params` (obj): Parameters used to construct the sampling function, which returns the element itself given a string identifier. 
    - `synthetic`: Parses a string identifier directly into a floating-point number. 
    - `image_directory`: Reads an image with its filename equal to the string identifier from a directory, then returns a Pillow Image version of the image. 
@@ -61,7 +61,7 @@ Each config has the following fields:
      2. `id_col` (str): The column which contains some unique identifier. 
      3. `exclude_cols` (list[str]): A list of columns which should be removed from the dataframe after loading it in. 
 4. `algo_params` (obj): Parameters used to choose and tune the algorithm of choice. 
-    - `epsgreedy`: OURS, which runs a histogram-based $\varepsilon$-greedy bandit. 
+    - `epsgreedy`: OURS, which runs a histogram-based epsilon-greedy bandit. 
       1. `alpha` (float): A parameter used to tune the rate of exploration. 
       2. `max` (float): The maximum range of the initial histogram. 
       3. `min` (float): The minimum range of the initial histogram. 
@@ -75,7 +75,7 @@ Each config has the following fields:
    - `UniformExploration`: Run an exploration-only bandit algorithm. (Note that exploration-only over a flat index and sampling without replacement is equivalent to uniform-sample in our setup.)
 4. `budget` (int): The maximum number of iterations. 
 5. `reps` (int): Number of times to repeat this config. All statistics will be averaged in the output file. 
-6. `k` (int): The cardinality constraint for top-$k$ querying. 
+6. `k` (int): The cardinality constraint for top-k querying. 
 7. `index_params` (obj): Parameters used to access the index file. 
    - `file` (str): Points to the index file's location on disk. 
 8. `sample_method` (str): Method used to sample identifiers from each leaf node.
@@ -99,19 +99,19 @@ The config for a ground truth run is similar to a regular experiment config, but
 
 The gt run's result is stored in a JSON file with the following fields. 
 
-1. `gt_solution` (list[str]): A list of all elements' identifiers in the gt top-$k$ solution. 
-2. `gt_rankings` (dict[str, int]): A mapping from a string identifier for an element and its ground truth ranking. A ranking of 1 means that it has the highest score, and a ranking of $n$ is for the lowest score. 
+1. `gt_solution` (list[str]): A list of all elements' identifiers in the gt top-k solution. 
+2. `gt_rankings` (dict[str, int]): A mapping from a string identifier for an element and its ground truth ranking. A ranking of 1 means that it has the highest score, and a ranking of n is for the lowest score. 
 3. `n` (int): The total number of elements in the search domain.
 
 ### Experiment Result
 
 The non-gt experimental runs' result is stored in a JSON file as a dictionary mapping from the config's name (str) to its result (obj). Each result has the following fields. 
 
-1. `STK` (list[float]): The average sum-of-top-$k$ scores (STK) at each iteration over all reps. 
-2. `KLS` (list[float]): The average $k$th-largest-score (KLS) at each iteration over all reps. If the running solution has size less than $k$, returns zero. 
+1. `STK` (list[float]): The average sum-of-top-k scores (STK) at each iteration over all reps. 
+2. `KLS` (list[float]): The average kth-largest-score (KLS) at each iteration over all reps. If the running solution has size less than k, returns zero. 
 3. `time` (list[float]): The average time at each iteration over all reps. 
 4. `Precision@K` (list[float]): The average Precision@K at each iteration over all reps. 
 5. `Recall@K` (list[float]): The average Recall@K at each iteration over all reps. 
-6. `AvgRank` (list[float]): The average rank of the running solution at each iteration over all reps. If the running solution has size less than $k$, the rankings are padded with $n$ for all missing elements. 
-7. `WorstRank` (list[float]): The $k$th rank of the running solution at each iteration over all reps. Returns $n$ if the running solution has size less than $k$. 
+6. `AvgRank` (list[float]): The average rank of the running solution at each iteration over all reps. If the running solution has size less than k, the rankings are padded with n for all missing elements. 
+7. `WorstRank` (list[float]): The kth rank of the running solution at each iteration over all reps. Returns n if the running solution has size less than k. 
 8. `reps` (float): The number of repetitions for this config. 

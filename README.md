@@ -97,11 +97,17 @@ The config for a ground truth run is similar to a regular experiment config, but
 
 ### GT Result
 
-The gt run's result is stored in a JSON file with the following fields. 
+The gt run's result is stored as TWO JSON files with the following fields. 
+
+The first JSON file is denoted `gt_result.json`. It records information about the ground truth ranking and scores of elements. 
 
 1. `gt_solution` (list[str]): A list of all elements' identifiers in the gt top-k solution. 
 2. `gt_rankings` (dict[str, int]): A mapping from a string identifier for an element and its ground truth ranking. A ranking of 1 means that it has the highest score, and a ranking of n is for the lowest score. 
-3. `n` (int): The total number of elements in the search domain.
+3. `gt_scores` (dict[str, float]): A mapping from a string identifier for an element to its ground truth score. 
+4. `n` (int): The total number of elements in the search domain. 
+5. `index_time` (float): The end-to-end time, in seconds, that took to build the sorted index. 
+
+The second JSON file is a flat index, with the special property that it is sorted w.r.t. the ground truth scores. 
 
 ### Experiment Result
 

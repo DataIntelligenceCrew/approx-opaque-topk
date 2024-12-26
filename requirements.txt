@@ -2,7 +2,7 @@
 # $ conda create --name <env> --file <this file>
 # platform: linux-64
 # created-by: conda 24.9.1
-_libgcc_mutex=0.1=conda_forge
+_libgcc_mutex=0.1=conda_forgev
 _openmp_mutex=4.5=2_gnu
 _py-xgboost-mutex=2.0=gpu_0
 blas=1.0=mkl

@@ -60,7 +60,7 @@ Each config has the following fields:
      1. *`file` (str): The path where the CSV file is stored. 
      2. `id_col` (str): The column which contains some unique identifier. 
      3. `exclude_cols` (list[str]): A list of columns which should be removed from the dataframe after loading it in. 
-4. `algo_params` (obj): Parameters used to choose and tune the algorithm of choice. 
+3. `algo_params` (obj): Parameters used to choose and tune the algorithm of choice. 
     - `epsgreedy`: OURS, which runs a histogram-based epsilon-greedy bandit. 
       1. `alpha` (float): A parameter used to tune the rate of exploration. 
       2. `max` (float): The maximum range of the initial histogram. 
@@ -83,6 +83,10 @@ Each config has the following fields:
    - `noreplace`: Performs sampling without replacement by pre-shuffling the leaf node, then performing a scan. 
    - `replace`: Performs sampling with replacement.
 9. `batch_size` (int): The number of elements to sample and score in a single batch. 
+10. `fallback_params` (obj): Parameters used to adjust the UniformSample fallback strategy when EpsGreedy does not work well. 
+    - `is_on` (bool): Turn fallback strategy on/off entirely. 
+    - `initial_threshold` (float): THe initial percentile, expressed as a float in [0,1], of data points to process before testing fallback strategy for the first time. 
+    - `retest_threshold` (float): After testing the fallback condition once, re-test the fallback condition after this many percentile of data points periodically. 
 
 ### GT Config
 

@@ -1,4 +1,5 @@
 import random
+import time
 from typing import List, Tuple, Dict
 
 import numpy as np
@@ -13,6 +14,8 @@ Then, a dendrogram is built over the means of the distributions.
 USAGE: python synthetic_index_builder.py --dendrogram_file <dendrogram_file> --flattened_file <flattened_file> -k <k>
     -n <n> --stdev_max <stdev_max> --stdev_min <stdev_min> --mu_max <mu_max> --mu_min <mu_min>
 """
+
+running_seed = 42
 
 def generate_random_distributions(k: int, n: int, mu_min: float, mu_max: float, stdev_min: float, stdev_max: float) -> Tuple[List[List[str]], np.ndarray]:
     """
@@ -47,6 +50,8 @@ if __name__ == '__main__':
     A separate version of the index, which combines all samples into a single leaf, is built as well. 
     The dendrogram-based index and the flat index are saved into separate JSON files. 
     """
+    start_time = time.time()
+
     # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--dendrogram-file', type=str, required=True)
@@ -72,7 +77,7 @@ if __name__ == '__main__':
         mu_min=args.mu_min,
         mu_max=args.mu_max,
         stdev_min=args.stdev_min,
-        stdev_max=args.stdev_max
+        stdev_max=args.stdev_max,
     )
 
     # Flatten the samples
@@ -90,3 +95,6 @@ if __name__ == '__main__':
 
     # Save the flattened index to a JSON file
     save_as_json({'children': flattened_cluster}, args.flattened_file)
+
+    end_time = time.time()
+    print("TOTAL TIME:", end_time - start_time)

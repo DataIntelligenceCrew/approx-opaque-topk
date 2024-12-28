@@ -157,6 +157,8 @@ def main(file_path: str, n_clusters: int, tree_output_path: str, single_node_tre
 
 
 if __name__ == "__main__":
+    start_time = time.time()
+
     # Set up argparse
     parser = argparse.ArgumentParser(description="Run k-means clustering, generate trees, and save output files.")
 
@@ -186,3 +188,7 @@ if __name__ == "__main__":
         id_column=args.id_column,
         pred_column=args.pred_column
     )
+
+    end_time = time.time()
+
+    print("TOTAL TIME:", end_time - start_time)

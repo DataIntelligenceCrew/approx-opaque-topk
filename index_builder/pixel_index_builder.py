@@ -133,6 +133,8 @@ def create_dendrogram(centroids: np.ndarray, filename_to_cluster: Dict) -> Dict:
 
 
 if __name__ == '__main__':
+    start_time = time.time()
+
     # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--dendrogram-file', type=str, required=True)
@@ -165,3 +167,7 @@ if __name__ == '__main__':
         flattened_cluster.append(image_name)
 
     save_as_json({'children': [x for x in flattened_cluster]}, args.flattened_file)
+
+    end_time = time.time()
+
+    print("TOTAL TIME:", end_time - start_time)

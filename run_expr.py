@@ -31,6 +31,7 @@ if __name__ == '__main__':
     with open(args.gt_filename, 'r') as file:
         gt_result = json.load(file)
     gt_solution: Set = set(gt_result['gt_solution'])  # The ground truth solution set
+    gt_scores: Dict[str, float] = gt_result['gt_scores']
     gt_rankings: Dict[str, int] = gt_result['gt_rankings']  # A mapping from element ID to ground truth ranking
     gt_max_rank: int = gt_result['n']
     gt_k: int = len(gt_solution)
@@ -51,13 +52,14 @@ if __name__ == '__main__':
                 scoring_params=expr_config['scoring_params'],
                 sampling_fn=get_sampler_from_params(expr_config['sampling_params']),
                 sampling_params=expr_config['sampling_params'],
-                algorithm=expr_config['algo_params']['type'],
                 algo_params=expr_config['algo_params'],
                 budget=expr_budget,
                 sample_method=expr_config['sample_method'],
                 batch_size=expr_config['batch_size'],
                 gt_rankings=gt_rankings,
-                gt_solution=gt_solution
+                gt_scores=gt_scores,
+                gt_solution=gt_solution,
+                skip_scoring_fn=expr_config['skip_scoring_fn']
             )
 
             # Compute metrics

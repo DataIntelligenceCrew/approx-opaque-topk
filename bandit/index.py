@@ -197,6 +197,21 @@ class IndexLeaf:
                                                 params['enlarge_max_factor'], params['enlarge_lowest'])
         self.metadata.update({'histogram': histogram})
 
+    def get_gain(self):
+        if 'histogram' in self.metadata:
+            return self.metadata['histogram'].expected_marginal_gain()
+        else:
+            raise ValueError('Attempted to obtain marginal gain from a node without histogram metadata.')
+
+    def get_greedy_gain(self):
+        return self.get_gain()
+
+    def get_average_gain(self):
+        return self.get_gain()
+
+    def get_leaf_elements(self):
+        return self.children
+
 
 class IndexNode:
     """
@@ -220,6 +235,19 @@ class IndexNode:
         :return: The child node at the specified index_builder.
         """
         return self.children[child_idx]
+
+    def remaining_size(self) -> int:
+        return sum([child.remaining_size() for child in self.children])
+
+    def get_greedy_gain(self) -> float:
+        return max([child.get_greedy_gain() for child in self.children])
+
+    def get_average_gain(self):
+        avg_gain = 0.0
+        for child in self.children:
+            avg_gain += child.get_average_gain() * child.remaining_size()
+        avg_gain /= self.remaining_size()
+        return avg_gain
 
     def get_grandchild(self, grandchild_idx: List[int]) -> Union[Self, IndexLeaf]:
         """
@@ -298,6 +326,12 @@ class IndexNode:
         self.metadata['histogram'].update_from_score(score, kth_largest_score)
         child: Union[Self, IndexLeaf] = self.get_child_at(selected_leaf_idx[0])
         child.update(algorithm, selected_leaf_idx[1:], score, kth_largest_score)
+
+    def get_leaf_elements(self):
+        elems = []
+        for child in self.children:
+            elems += child.get_leaf_elements()
+        return elems
 
 
 def store_index_to_json(index: IndexNode, filename: str):

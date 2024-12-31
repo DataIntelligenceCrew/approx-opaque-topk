@@ -40,6 +40,17 @@ def get_image_vector(image_path: str, target_size: Tuple[int, int]) -> np.ndarra
     return vector
 
 
+def process_single_image(args) -> np.ndarray:
+    """
+    Helper function for multithreading. Processes a single image.
+
+    :param args: Tuple containing (image_path, target_size).
+    :return: Flattened 1-D numpy array representing the image.
+    """
+    image_path, target_size = args
+    return get_image_vector(image_path, target_size)
+
+
 def subsample_images(directory: str, num_samples: int, target_size: Tuple[int, int]) -> List[np.ndarray]:
     """
     Uniformly subsample a specified number of images from the directory,
@@ -50,24 +61,19 @@ def subsample_images(directory: str, num_samples: int, target_size: Tuple[int, i
     :param target_size: Tuple (width, height) to resize images to.
     :return: List of flattened 1-D numpy arrays representing the images.
     """
-    # Get list of image filenames
     image_files: List[str] = [os.path.join(directory, fname) for fname in os.listdir(directory)
         if fname.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff'))]
 
-    # If num_samples > number of images, adjust num_samples
     num_samples: int = min(num_samples, len(image_files))
 
-    # Randomly select num_samples images
     sampled_files: List[str] = random.sample(image_files, num_samples)
+    print("Selected a subsample of filenames")
 
-    print("Selected subset file names")
+    # Use ThreadPoolExecutor for parallel processing
+    with ThreadPoolExecutor() as executor:
+        vectors = list(executor.map(process_single_image, [(file, target_size) for file in sampled_files]))
 
-    vectors: List[np.ndarray] = []
-    for file_path in sampled_files:
-        # Open image
-        vector: np.ndarray = get_image_vector(file_path, target_size)
-        vectors.append(vector)
-    return vectors
+    return vector
 
 
 def perform_kmeans(vectors: list, n_clusters: int) -> np.ndarray:
@@ -91,7 +97,26 @@ def perform_kmeans(vectors: list, n_clusters: int) -> np.ndarray:
     return centroids
 
 
-def label_images(directory: str, centroids: np.ndarray, target_size: Tuple[int, int]) -> Dict:
+def label_single_image(args) -> Tuple[str, int]:
+    """
+    Helper function to label a single image with the nearest cluster index.
+
+    :param args: Tuple containing (directory, fname, centroids, target_size).
+    :return: Tuple of (filename, cluster index).
+    """
+    directory, fname, centroids, target_size = args
+    file_path: str = os.path.join(directory, fname)
+    vector: np.ndarray = get_image_vector(file_path, target_size)
+
+    # Compute distances to centroids
+    distances: np.ndarray = np.linalg.norm(centroids - vector, axis=1)
+
+    # Assign to nearest centroid
+    cluster_idx: int = np.argmin(distances)
+    return fname, cluster_idx
+
+
+def label_images(directory: str, centroids: np.ndarray, target_size: Tuple[int, int]) -> Dict[str, int]:
     """
     Iterate over all images in the directory, label each filename with the cluster index it belongs to.
 
@@ -105,17 +130,14 @@ def label_images(directory: str, centroids: np.ndarray, target_size: Tuple[int, 
         if fname.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff'))]
     image_files.sort()
 
-    filename_to_cluster = {}
-    for fname in image_files:
-        file_path: str = os.path.join(directory, fname)
-        vector: np.ndarray = get_image_vector(file_path, target_size)
+    # Use ProcessPoolExecutor for parallel processing
+    with ProcessPoolExecutor() as executor:
+        results = list(
+            executor.map(label_single_image, [(directory, fname, centroids, target_size) for fname in image_files])
+        )
 
-        # Compute distances to centroids
-        distances: np.ndarray = np.linalg.norm(centroids - vector, axis=1)
-
-        # Assign to nearest centroid
-        cluster_idx: int = np.argmin(distances)
-        filename_to_cluster[fname] = cluster_idx
+    # Build dictionary mapping filenames to cluster indices
+    filename_to_cluster = {fname: cluster_idx for fname, cluster_idx in results}
     return filename_to_cluster
 
 
@@ -156,9 +178,9 @@ if __name__ == '__main__':
     # Subsample images from directory, then apply k-means over it
     subsample = subsample_images(args.image_directory, args.subsample_size, (16, 16))
 
-    print("Obtained subsample", time.time() - start_time)
+    print("Obtained subsample vectors", time.time() - start_time)
 
-    centroids = perform_kmeans(subsample, args.k, n)
+    centroids = perform_kmeans(subsample, args.k)
 
     print("Applied kmeans", time.time() - start_time)
 

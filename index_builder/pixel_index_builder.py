@@ -1,11 +1,14 @@
 import argparse
 import os
 import random
+import time
 
-from k_means_constrained import KMeansConstrained
+#from k_means_constrained import KMeansConstrained
 import numpy as np
 from PIL import Image
 from typing import List, Tuple, Dict
+from sklearn.cluster import KMeans
+from concurrent.futures import ThreadPoolExecutor
 
 from builder import hac_dendrogram, save_as_json
 
@@ -57,6 +60,8 @@ def subsample_images(directory: str, num_samples: int, target_size: Tuple[int, i
     # Randomly select num_samples images
     sampled_files: List[str] = random.sample(image_files, num_samples)
 
+    print("Selected subset file names")
+
     vectors: List[np.ndarray] = []
     for file_path in sampled_files:
         # Open image
@@ -73,12 +78,12 @@ def perform_kmeans(vectors: list, n_clusters: int) -> np.ndarray:
     :param n_clusters: Number of clusters.
     :return: Centroids of the clusters.
     """
-    size_min: int = int(len(vectors) / n_clusters * 0.5)
-    print("size_min:", size_min)
+    #size_min: int = int(len(vectors) / n_clusters * 0.5)
+    #print("size_min:", size_min)
     vectors: np.ndarray = np.array(vectors)
-    kmeans = KMeansConstrained(
+    kmeans = KMeans(
         n_clusters=n_clusters,
-        size_min=size_min,
+        #size_min=size_min,
         verbose=1,
     )
     kmeans.fit(vectors)
@@ -143,23 +148,34 @@ if __name__ == '__main__':
     parser.add_argument('--subsample-size', type=int, required=True)
     parser.add_argument('--image-directory', type=str, required=True)
     args = parser.parse_args()
-    print("Parsed arguments")
+    print("Parsed arguments", time.time() - start_time)
 
     # Set n manually
     n = 320291
 
     # Subsample images from directory, then apply k-means over it
     subsample = subsample_images(args.image_directory, args.subsample_size, (16, 16))
+
+    print("Obtained subsample", time.time() - start_time)
+
     centroids = perform_kmeans(subsample, args.k, n)
+
+    print("Applied kmeans", time.time() - start_time)
 
     # Label all image in the directory with a cluster idx
     image_labels = label_images(args.image_directory, centroids, (16, 16))
 
+    print("Labeled images", time.time() - start_time)
+
     # Construct dendrogram over all the images and their clusters
     dendrogram = create_dendrogram(centroids, image_labels)
 
+    print("Constructed dendrogram", time.time(), start_time)
+
     # Save dendrogram index
     save_as_json(dendrogram, args.dendrogram_file)
+
+    print("Saved dendrogram", time.time() - start_time)
 
     # Construct a flat cluster
     flattened_cluster = []

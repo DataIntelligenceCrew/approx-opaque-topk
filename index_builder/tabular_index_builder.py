@@ -1,5 +1,6 @@
 from typing import List, Tuple, Dict
 
+import time
 import pandas as pd
 import numpy as np
 from scipy.cluster.hierarchy import linkage, to_tree

@@ -19,12 +19,11 @@ Index for the UsedCars data is built using the following steps.
 
 The command to run the index builder is the following. 
 ```
-python tabular_index_builder.py --input_file <path_to_input_file> -k 500
-    --dendrogram_file <dendrogram_file> --flattened_file <flattened_file>
-    --subsample_size 100000 --id_column listing_id --pred_column price
+python tabular_index_builder.py --input_file <path_to_input_file> -k 500 --dendrogram_file <dendrogram_file> --flattened_file <flattened_file> --subsample_size 100000 --id_column listing_id --pred_column price
 ```
 The paths will differ depending on where the dataset and indexes are stored. 
 
+ python tabular_index_builder.py --input_file ~/Data/UsedCars/used_cars_ -k 500 --dendrogram_file ../Temp/Index/UsedCars/dendrogram.json --flattened_file ../Temp/Index/UsedCars/flattened.json --subsample_size 100000 --id_column listing_id --pred_column price
 
 ## Image
 

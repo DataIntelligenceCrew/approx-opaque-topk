@@ -29,15 +29,15 @@ def get_image_vector(image_path: str, target_size: Tuple[int, int]) -> np.ndarra
     :param target_size: Tuple (width, height) to resize the image to.
     :return: Flattened 1-D numpy array representing the image.
     """
-    # Open image
-    with Image.open(image_path) as img:
-        # Standardize image
-        img: Image = img.resize(target_size).convert('RGB')
-        # Convert to numpy array
-        img_array: np.ndarray = np.array(img)
-        # Flatten to 1D vector
-        vector: np.ndarray = img_array.flatten()
-    return vector
+    try:
+        with Image.open(image_path) as img:
+            img: Image = img.resize(target_size).convert('RGB')
+            img_array: np.ndarray = np.array(img)
+            vector: np.ndarray = img_array.flatten()
+        return vector
+    except ValueError as e:
+        print(f"Error processing {image_path}: {e}")
+        return None  # Return None if an image fails to process
 
 
 def process_single_image(args) -> np.ndarray:
@@ -71,8 +71,7 @@ def subsample_images(directory: str, num_samples: int, target_size: Tuple[int, i
 
     # Use ThreadPoolExecutor for parallel processing
     with ThreadPoolExecutor() as executor:
-        vectors = list(executor.map(process_single_image, [(file, target_size) for file in sampled_files]))
-
+        vectors = list(filter(None, executor.map(process_single_image, [(file, target_size) for file in sampled_files])))
     return vector
 
 

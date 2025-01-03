@@ -31,14 +31,28 @@ def get_dataframe_sampler(sampling_params: Dict) -> Callable:
     """
     For tabular datasets, the sampler retrieves the data from the dataframe based on the index.
 
+    If df.loc[id_] is a Series, it converts it into a single-row DataFrame.
+    If df.loc[id_] is a DataFrame, it retains only the first row.
+
     :param sampling_params: The sampling parameters. Here, it should have 'file', 'id_col', and 'exclude_cols' keys.
-    :return: A function that returns a list of dataframes.
+    :return: A function that returns a list of DataFrames.
     """
     df = pd.read_csv(sampling_params['file']).drop(labels=sampling_params['exclude_cols'], axis=1, errors='ignore')
     df.set_index(sampling_params['id_col'], inplace=True)
+
     def dataframe_sampler(sample_ids: List[str], sampling_params: Dict) -> List[pd.DataFrame]:
-        results = [df.loc[id_].to_frame().T for id_ in sample_ids]
+        results = []
+        for id_ in sample_ids:
+            result = df.loc[id_]
+            if isinstance(result, pd.Series):
+                # Convert Series to a single-row DataFrame
+                result_df = result.to_frame().T
+            else:
+                # If result is already a DataFrame, take only the first row
+                result_df = result.iloc[:1]
+            results.append(result_df)
         return results
+
     return dataframe_sampler
 
 

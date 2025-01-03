@@ -197,17 +197,17 @@ class IndexLeaf:
                                                 params['enlarge_max_factor'], params['enlarge_lowest'])
         self.metadata.update({'histogram': histogram})
 
-    def get_gain(self):
+    def get_gain(self, kth_largest_score):
         if 'histogram' in self.metadata:
-            return self.metadata['histogram'].expected_marginal_gain()
+            return self.metadata['histogram'].expected_marginal_gain(kth_largest_score)
         else:
             raise ValueError('Attempted to obtain marginal gain from a node without histogram metadata.')
 
-    def get_greedy_gain(self):
-        return self.get_gain()
+    def get_greedy_gain(self, kth_largest_score):
+        return self.get_gain(kth_largest_score)
 
-    def get_average_gain(self):
-        return self.get_gain()
+    def get_average_gain(self, kth_largest_score):
+        return self.get_gain(kth_largest_score)
 
     def get_leaf_elements(self):
         return self.children
@@ -239,13 +239,13 @@ class IndexNode:
     def remaining_size(self) -> int:
         return sum([child.remaining_size() for child in self.children])
 
-    def get_greedy_gain(self) -> float:
-        return max([child.get_greedy_gain() for child in self.children])
+    def get_greedy_gain(self, kth_largest_score) -> float:
+        return max([child.get_greedy_gain(kth_largest_score) for child in self.children])
 
-    def get_average_gain(self):
+    def get_average_gain(self, kth_largest_score):
         avg_gain = 0.0
         for child in self.children:
-            avg_gain += child.get_average_gain() * child.remaining_size()
+            avg_gain += child.get_average_gain(kth_largest_score) * child.remaining_size()
         avg_gain /= self.remaining_size()
         return avg_gain
 
@@ -373,3 +373,4 @@ def  get_index_from_dict(dict_: Dict, shuffle_elements: bool) -> Union[IndexNode
     else:
         return IndexLeaf(dict_['children'], metadata = None, shuffle = shuffle_elements)
     return IndexNode(children)
+

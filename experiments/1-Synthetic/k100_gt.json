@@ -8,7 +8,7 @@
   },
   "k": 100,
   "index_params": {
-    "file": "<root-dir>/Index/Synthetic/flat.json"
+    "file": "/home/jwc/approx-topk/Temp/Index/Synthetic/flattened.json"
   },
   "batch_size": 1
 }

@@ -9,6 +9,7 @@ from PIL import Image
 from typing import List, Tuple, Dict
 from sklearn.cluster import KMeans
 from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 
 from builder import hac_dendrogram, save_as_json
 
@@ -71,8 +72,8 @@ def subsample_images(directory: str, num_samples: int, target_size: Tuple[int, i
 
     # Use ThreadPoolExecutor for parallel processing
     with ThreadPoolExecutor() as executor:
-        vectors = list(filter(None, executor.map(process_single_image, [(file, target_size) for file in sampled_files])))
-    return vector
+        vectors = [vector for vector in executor.map(process_single_image, [(file, target_size) for file in sampled_files]) if vector is not None]
+    return vectors
 
 
 def perform_kmeans(vectors: list, n_clusters: int) -> np.ndarray:
@@ -107,6 +108,9 @@ def label_single_image(args) -> Tuple[str, int]:
     file_path: str = os.path.join(directory, fname)
     vector: np.ndarray = get_image_vector(file_path, target_size)
 
+    if vector is None:
+        return None, None
+
     # Compute distances to centroids
     distances: np.ndarray = np.linalg.norm(centroids - vector, axis=1)
 
@@ -129,14 +133,18 @@ def label_images(directory: str, centroids: np.ndarray, target_size: Tuple[int, 
         if fname.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff'))]
     image_files.sort()
 
+    print("Got list of all image filenames")
+
     # Use ProcessPoolExecutor for parallel processing
-    with ProcessPoolExecutor() as executor:
+    with ThreadPoolExecutor() as executor:
         results = list(
             executor.map(label_single_image, [(directory, fname, centroids, target_size) for fname in image_files])
         )
+    print("Assigned images to clusters")
+
 
     # Build dictionary mapping filenames to cluster indices
-    filename_to_cluster = {fname: cluster_idx for fname, cluster_idx in results}
+    filename_to_cluster = {fname: cluster_idx for fname, cluster_idx in results if fname is not None}
     return filename_to_cluster
 
 

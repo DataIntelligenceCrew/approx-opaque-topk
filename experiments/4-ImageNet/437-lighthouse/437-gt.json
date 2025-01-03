@@ -6,11 +6,11 @@
   },
   "sampling_params": {
     "type": "image_directory",
-    "directory_path": "<root-dir>/Data/ImageNet/"
+    "directory_path": "/home/jwc/Data/imagenet_subset/"
   },
   "k": 1000,
   "index_params": {
-    "file": "<root-dir>/Index/ImageNet/flat.json"
+    "file": "/home/jwc/approx-topk/Temp/Index/ImageNet/base-flattened.json"
   },
-  "batch_size": 350
+  "batch_size": 500
 }

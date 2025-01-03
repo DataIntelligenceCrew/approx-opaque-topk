@@ -26,7 +26,10 @@ def scan_test(index_params: Dict, k: int, scoring_params: Dict, sampling_params:
 
     # Load the index as a list of elements in insertion order
     all_elements: List[str] = get_element_list_from_flat_index(index_params)
-    n: int = len(all_elements)
+    print(type(all_elements[0]))
+    #n: int = len(all_elements)
+    n=10
+    k=2
 
     # Initialize bookkeeping
     samples_scores_list: List[Tuple[float, str]] = list()  # A list of (score, sample_id) tuples
@@ -49,7 +52,9 @@ def scan_test(index_params: Dict, k: int, scoring_params: Dict, sampling_params:
         # For each score, update the mapping from samples to scores
         for i in range(len(sample_ids)):
             sample_id, sample_score = sample_ids[i], scores[i]
-            samples_scores_list.append((sample_score, sample_id))
+            sample_tuple = (sample_score, sample_id)
+            print(sample_tuple)
+            samples_scores_list.append(sample_tuple)
 
     # Get gt rankings by sorting the (score, id) list in descending order
     samples_scores_list.sort(reverse=True)
@@ -60,19 +65,25 @@ def scan_test(index_params: Dict, k: int, scoring_params: Dict, sampling_params:
     index_building_cpu_time: float = index_build_end_time - index_build_start_time
 
     # Create a mapping from ID to gt ranking
-    id_to_rankings: Dict[str, int] = dict()
+    id_to_rankings: Dict[Any, int] = dict()
     for idx in range(n):
         id_to_rankings[samples_scores_list[idx][1]] = idx+1
 
+    print(id_to_rankings)
+
     # Create a mapping from ID to gt score
-    id_to_scores: Dict[str, float] = dict()
+    id_to_scores: Dict[Any, float] = dict()
     for idx in range(n):
         id_to_scores[samples_scores_list[idx][1]] = samples_scores_list[idx][0]
+
+    print(id_to_scores)
 
     # Get gt solution by iterating over the first k elements of the sorted list
     gt_solution = []
     for idx in range(k):
         gt_solution.append(samples_scores_list[idx][1])
+
+    print(gt_solution)
 
     # Return result
     result: Dict[str, Any] = {
@@ -121,7 +132,7 @@ if __name__ == '__main__':
     sorted_index_write_start_time = time.time()
     with open(args.sorted_index_file, 'w') as file:
         sorted_index = {
-            'children': test_result['sorted_list']
+            'children': [x[1] for x in test_result['sorted_list']]
         }
         json.dump(sorted_index, file, indent=2)
     sorted_index_write_end_time = time.time()
@@ -137,4 +148,5 @@ if __name__ == '__main__':
             'n': test_result['n'],
             'index_time': index_total_time
         }
+        print(gt_result)
         json.dump(gt_result, file, indent=2)

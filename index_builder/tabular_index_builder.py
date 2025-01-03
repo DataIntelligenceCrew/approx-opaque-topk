@@ -90,7 +90,7 @@ def agglomerative_clustering_and_build_tree(centroids: np.ndarray, clusters: Lis
             # Leaf node: return the ID column as a list
             cluster_df = clusters[node.id]
             ids = cluster_df[id_column].tolist()
-            ids = [str(id) for id in ids]
+            #ids = [str(id) for id in ids]
             return {
                 'children': ids
             }

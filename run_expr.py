@@ -59,7 +59,8 @@ if __name__ == '__main__':
                 gt_rankings=gt_rankings,
                 gt_scores=gt_scores,
                 gt_solution=gt_solution,
-                skip_scoring_fn=expr_config['skip_scoring_fn']
+                skip_scoring_fn=expr_config['skip_scoring_fn'],
+                fallback_params=expr_config['fallback_params']
             )
 
             # Compute metrics
@@ -70,6 +71,13 @@ if __name__ == '__main__':
             rep_recalls: np.array = np.array([x['Recall@K'] for x in run_result['iter_results']])
             rep_avg_ranks: np.array = np.array([x['AvgRank'] for x in run_result['iter_results']])
             rep_worst_ranks: np.array = np.array([x['WorstRank'] for x in run_result['iter_results']])
+            rep_overhead_one_time: float = run_result['overhead_one_time']
+            rep_overhead_pq: float = run_result['overhead_pq']
+            rep_overhead_algo: float = run_result['overhead_algo']
+            rep_overhead_scorer: float = run_result['overhead_scorer']
+            rep_overhead_other: float = run_result['overhead_other']
+            fallback_switch_itr: int = run_result['fallback_switch_itr']
+
 
             # Create dictionary entry if not exists
             if rep == 0:
@@ -81,6 +89,12 @@ if __name__ == '__main__':
                     "Recall@K": rep_recalls,
                     "AvgRank": rep_avg_ranks,
                     "WorstRank": rep_worst_ranks,
+                    "overhead_one_time": rep_overhead_one_time,
+                    "overhead_algo": rep_overhead_algo,
+                    "overhead_pq": rep_overhead_pq,
+                    "overhead_scorer": rep_overhead_scorer,
+                    "overhead_other": rep_overhead_other,
+                    "fallback_switch_itrs": [fallback_switch_itr],
                     "reps": expr_reps
                 }
             else:  # Otherwise, sum all metrics
@@ -91,6 +105,12 @@ if __name__ == '__main__':
                 config_stats[expr_name]["Recall@K"] += rep_recalls
                 config_stats[expr_name]["AvgRank"] += rep_avg_ranks
                 config_stats[expr_name]["WorstRank"] += rep_worst_ranks
+                config_stats[expr_name]["overhead_one_time"] += rep_overhead_one_time
+                config_stats[expr_name]["overhead_algo"] += rep_overhead_algo
+                config_stats[expr_name]["overhead_pq"] += rep_overhead_pq
+                config_stats[expr_name]["overhead_scorer"] += rep_overhead_scorer
+                config_stats[expr_name]["overhead_other"] += rep_overhead_other
+                config_stats[expr_name]["fallback_switch_itrs"].append(fallback_switch_itr)
 
             print("Completed", expr_name, "rep", rep)
 
@@ -104,7 +124,13 @@ if __name__ == '__main__':
         config_stats[expr_name]["Recall@K"]: List[float] = list(config_stats[expr_name]["Recall@K"] / float(expr_reps))
         config_stats[expr_name]["AvgRank"]: List[float] = list(config_stats[expr_name]["AvgRank"] / float(expr_reps))
         config_stats[expr_name]["WorstRank"]: List[float] = list(config_stats[expr_name]["WorstRank"] / float(expr_reps))
+        config_stats[expr_name]["overhead_one_time"] = config_stats[expr_name]["overhead_one_time"] / float(expr_reps)
+        config_stats[expr_name]["overhead_algo"] = config_stats[expr_name]["overhead_algo"] / float(expr_reps)
+        config_stats[expr_name]["overhead_pq"] = config_stats[expr_name]["overhead_pq"] / float(expr_reps)
+        config_stats[expr_name]["overhead_scorer"] = config_stats[expr_name]["overhead_scorer"] / float(expr_reps)
+        config_stats[expr_name]["overhead_other"] = config_stats[expr_name]["overhead_other"] / float(expr_reps)
 
     # Save results
     with open(args.output_filename, 'w') as file:
         json.dump(config_stats, file, indent=2)
+

@@ -1,5 +1,5 @@
 {
-  "EpsGreedy": {
+  "EpsGreedy (B=4)": {
     "scoring_params": {
       "type": "xgboost",
       "model_path": "/home/jwc/approx-topk/Temp/Models/usedcars_model.json",
@@ -16,7 +16,7 @@
       "alpha": 1.0,
       "max": 1.0,
       "min": 0.0,
-      "num_bins": 8,
+      "num_bins": 4,
       "rebin_decay": 1.0,
       "enlarge_max_factor": 1.1,
       "enlarge_lowest": true,
@@ -32,12 +32,10 @@
     "batch_size": 1,
     "skip_scoring_fn": false,
     "fallback_params": {
-      "enabled": true,
-      "initial_threshold": 0.05,
-      "frequency": 0.01
+      "enabled": false
     }
   },
-  "EpsGreedy (No Fallback)": {
+  "EpsGreedy (B=8)": {
     "scoring_params": {
       "type": "xgboost",
       "model_path": "/home/jwc/approx-topk/Temp/Models/usedcars_model.json",
@@ -54,11 +52,11 @@
       "alpha": 1.0,
       "max": 1.0,
       "min": 0.0,
-      "num_bins": 8,
+      "num_bins": 4,
       "rebin_decay": 1.0,
       "enlarge_max_factor": 1.1,
       "enlarge_lowest": true,
-      "subtract": false
+      "subtract": true
     },
     "budget": 100000,
     "reps": 5,
@@ -73,7 +71,7 @@
       "enabled": false
     }
   },
-  "UniformExploration": {
+  "EpsGreedy (B=16)": {
     "scoring_params": {
       "type": "xgboost",
       "model_path": "/home/jwc/approx-topk/Temp/Models/usedcars_model.json",
@@ -86,7 +84,51 @@
       "exclude_cols": ["price"]
     },
     "algo_params": {
-      "type": "UniformExploration"
+      "type": "EpsGreedy",
+      "alpha": 1.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 4,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 100000,
+    "reps": 5,
+    "k": 250,
+    "index_params": {
+      "file": "/home/jwc/approx-topk/Temp/Index/UsedCars/dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 1,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": false
+    }
+  },
+  "EpsGreedy (B=32)": {
+    "scoring_params": {
+      "type": "xgboost",
+      "model_path": "/home/jwc/approx-topk/Temp/Models/usedcars_model.json",
+      "exclude_cols": ["listing_id", "price"]
+    },
+    "sampling_params": {
+      "type": "dataframe",
+      "file": "/home/jwc/Data/UsedCars/used_cars_val.parquet",
+      "id_col": "listing_id",
+      "exclude_cols": ["price"]
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 1.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 4,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
     },
     "budget": 100000,
     "reps": 5,

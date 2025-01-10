@@ -95,21 +95,15 @@ def get_xgboost_scorer(scorer_params: Dict) -> Callable:
 
     def xgboost_scorer(scorer_inputs: List[pd.DataFrame], params: Dict) -> List[float]:
         """
-        :param scorer_inputs: A list of DataFrames, where each DataFrame is a row of input data.
+        :param scorer_inputs: A list of DataFrames, each containing a single row of input data.
         :param params: A dictionary that contains the 'model_path' field.
         :return: A list of predictions for each input DataFrame.
         """
-        predictions = []
-
-        for df in scorer_inputs:
-            # Convert the DataFrame into a DMatrix which XGBoost expects
-            dmatrix = xgb.DMatrix(df.drop(exclude_cols, axis=1, errors='ignore'))
-            # Predict using the loaded model
-            pred = model.predict(dmatrix)
-            # Store the predictions for this DataFrame
-            predictions.append(pred.tolist()[0])  # Convert numpy array to list
-        return predictions
-
+        combined_df = pd.concat(scorer_inputs, ignore_index=True)
+        combined_df_cleaned = combined_df.drop(exclude_cols, axis=1, errors='ignore')
+        dmatrix = xgb.DMatrix(combined_df_cleaned)
+        pred = model.predict(dmatrix)
+        return pred.tolist()
     return xgboost_scorer
 
 

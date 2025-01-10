@@ -1,16 +1,15 @@
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict
 
 import time
 import pandas as pd
 import numpy as np
 from scipy.cluster.hierarchy import linkage, to_tree
+import json
 import argparse
 from sklearn.metrics import pairwise_distances_argmin_min
 from sklearn.cluster import KMeans
 
 from builder import save_as_json
-
-from scipy.spatial.distance import pdist, squareform
 
 
 """
@@ -54,7 +53,7 @@ def kmeans_clustering(df: pd.DataFrame, n_clusters: int, subsample_size: int, ex
     data_matrix_subsample: np.ndarray = dataframe_to_matrix_excluding_columns(subsample_df, exclude_columns)
 
     # Step 2: Perform k-means clustering on the subsample
-    kmeans = KMeans(n_clusters=n_clusters, verbose=1, random_state=seed, n_init=1)
+    kmeans = KMeans(n_clusters=n_clusters, verbose=1, random_state=seed, n_init=5)
     kmeans.fit(data_matrix_subsample)
     centroids: np.ndarray = kmeans.cluster_centers_
 
@@ -73,46 +72,40 @@ def kmeans_clustering(df: pd.DataFrame, n_clusters: int, subsample_size: int, ex
     return clusters, centroids
 
 
-def agglomerative_clustering_and_build_tree(centroids: np.ndarray, clusters: List[Any], id_column: str, balanced: bool = True) -> Dict:
+def agglomerative_clustering_and_build_tree(centroids: np.ndarray, clusters: List[pd.DataFrame], id_column: str) -> Dict:
     """
     Perform hierarchical agglomerative clustering on the centroids and build a human-readable tree structure.
-    Supports both balanced and unbalanced clustering methods.
+    Leaf nodes store the values from the ID column.
 
     :param centroids: The cluster centroids from k-means.
-    :param clusters: The list of DataFrames or structures representing each cluster.
+    :param clusters: The list of DataFrames representing each cluster.
     :param id_column: The name of the ID column to store at leaf nodes.
-    :param balanced: Whether to use the balanced clustering method (default: True).
     :return: A dictionary representing the tree structure.
     """
-    if balanced:
-        # Use the balanced HAC method
-        tree_structure = balanced_hac(centroids, [[df[id_column].tolist()] for df in clusters])
-    else:
-        # Perform standard HAC using scipy's linkage
-        z_: np.ndarray = linkage(centroids, method='average')
-        root_node, _ = to_tree(z_, rd=True)
+    # Perform HAC
+    z_: np.ndarray = linkage(centroids, method='average')
+    root_node, _ = to_tree(z_, rd=True)
 
-        # Build the tree dictionary for standard HAC
-        def build_tree_dict(node) -> dict:
-            if node.is_leaf():
-                # Leaf node: return the ID column as a list
-                cluster_df = clusters[node.id]
-                ids = cluster_df[id_column].tolist()
-                return {
-                    'children': ids
-                }
-            else:
-                # Intermediate node: recursively build its children
-                return {
-                    'children': [
-                        build_tree_dict(node.get_left()),
-                        build_tree_dict(node.get_right())
-                    ]
-                }
+    # Build the tree dictionary; re-implements the logic since we have leaf as dataframes and not lists
+    def build_tree_dict(node) -> dict:
+        if node.is_leaf():
+            # Leaf node: return the ID column as a list
+            cluster_df = clusters[node.id]
+            ids = cluster_df[id_column].tolist()
+            return {
+                'children': ids
+            }
+        else:
+            # Intermediate node: recursively build its children
+            return {
+                'children': [
+                    build_tree_dict(node.get_left()),
+                    build_tree_dict(node.get_right())
+                ]
+            }
 
-        tree_structure = build_tree_dict(root_node)
-
-    return tree_structure
+    # Step 4: Build and return the tree structure starting from the root
+    return build_tree_dict(root_node)
 
 
 def build_single_node_tree(df: pd.DataFrame, id_column: str) -> Dict:

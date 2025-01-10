@@ -2,12 +2,13 @@ import json
 import math
 import random
 import time
+from tqdm import tqdm
 from typing import List, Callable, Union, Dict, Set, Any, Tuple
 
 import numpy as np
 
 from bandit.index import IndexNode, IndexLeaf, get_index_from_dict
-from bandit.limited_pq import LimitedPQ
+from bandit.limited_pq import LimitedPQ, LimitedList
 
 
 def approx_top_k_bandit(index_params: Dict, k: int, scoring_fn: Callable, scoring_params: Dict, sampling_fn: Callable,
@@ -58,13 +59,15 @@ def approx_top_k_bandit(index_params: Dict, k: int, scoring_fn: Callable, scorin
 
     # Load in the index
     index: Dict = get_initialized_index(index_params['file'], sample_method, algo_params)
+    if sample_method == "reversescan":
+        sample_method = "scan"
 
     # Initialize bookkeeping index_metadata structures
     n: int = index.remaining_size()
     itr: int = 1
-    pq: LimitedPQ = LimitedPQ(k)
+    pq: Union[LimitedPQ, LimitedList] = LimitedList(k) if sample_method == 'sortedscan' else LimitedPQ(k)
     iter_results: List[Dict] = []
-    next_fallback_check_itr = int(n * fallback_params['initial_threshold']) if fallback_params['enabled'] else n
+    next_fallback_check_itr = int(n * fallback_params['initial_threshold']) if fallback_params['enabled'] else n+1
     print(f"fallback iterations: {next_fallback_check_itr}")
 
     ### INITIAL ONE-TIME OVERHEAD END ###
@@ -74,128 +77,144 @@ def approx_top_k_bandit(index_params: Dict, k: int, scoring_fn: Callable, scorin
 
 
     # Main loop over batches of samples
-    while True:
-        #if itr % 1000 == 0:
-            #print(itr)
+    with tqdm(total=budget) as pbar:
+        while True:
 
-        timestamp: float = time.time()
-        ### TERMINATION CONDITION START ###
-        # Check termination condition, if so terminate
-        if termination_condition_is_met(budget, itr):
-            break
-        # Check if index is empty, if so terminate
-        if index.children is None or len(index.children) == 0:
-            break
-        ### TERMINATION CONDITION END ###
-        iter_termination_check_time = time.time() - timestamp
-        total_time_per_category['other'] += iter_termination_check_time
-        time_elapsed_on_useful_work += iter_termination_check_time
-
-
-        timestamp = time.time()
-        ### FALLBACK LOGIC START ###
-        if algo_params['type'] == 'EpsGreedy' and fallback_params['enabled']:
-            if itr + batch_size > next_fallback_check_itr:  # We should check fallback condition this iteration
-                #print(f"Fallback check, itr {itr}")
-
-                # Estimate the expected marginal gain of the two competing algorithms
-                greedy_gain: float = index.get_greedy_gain(pq.kth_best_score())
-                average_gain: float = index.get_average_gain(pq.kth_best_score())
-
-                # Estimate the amount of time spent amortized per iteration for the two competing algorithms
-                uniform_sample_time_per_iter = (total_time_per_category['pq'] + total_time_per_category['scorer'] + total_time_per_category['other']) / itr
-                epsgreedy_time_per_iter = uniform_sample_time_per_iter + total_time_per_category['algo'] / itr
-
-                # Estimate the slope of the tangent line at the current iteration for the two competing algorithms
-                uniform_sample_tangent_slope = average_gain / uniform_sample_time_per_iter
-                epsgreedy_tangent_slope = greedy_gain / epsgreedy_time_per_iter
-
-                #print(f"DEBUG: itr {itr}, UniformSample slope = {average_gain} / {uniform_sample_time_per_iter} = {uniform_sample_tangent_slope}")
-                #print(f"DEBUG: itr {itr}, EpsGreedy slope = {greedy_gain} / {epsgreedy_time_per_iter} = {epsgreedy_tangent_slope}")
-
-                # Fallback condition is met
-                if uniform_sample_tangent_slope >= epsgreedy_tangent_slope:
-                    # Change the algorithm to be uniform sample
-                    algo_params = { 'type': 'UniformExploration' }
-                    # Recreate the index into a flat, shuffled index
-                    leaf_elements = index.get_leaf_elements()
-                    index_dict = { 'children': leaf_elements }
-                    index: Dict = get_index_from_dict(index_dict, True)
-                    index.initialize_metadata('UniformExploration', algo_params)
-                    fallback_switch_itr = -1
-                else:  # Fallback condition not met, check back in the next threshold
-                    next_fallback_check_itr += int(n * fallback_params['frequency'])
-        ### FALLBACK LOGIC END ###
-        iter_fallback_check_time = time.time() - timestamp
-        total_time_per_category['algo'] += iter_fallback_check_time
-        time_elapsed_on_useful_work += iter_fallback_check_time
+            timestamp: float = time.time()
+            ### TERMINATION CONDITION START ###
+            # Check termination condition, if so terminate
+            if termination_condition_is_met(budget, itr):
+                break
+            # Check if index is empty, if so terminate
+            if index.children is None or len(index.children) == 0:
+                break
+            ### TERMINATION CONDITION END ###
+            iter_termination_check_time = time.time() - timestamp
+            total_time_per_category['other'] += iter_termination_check_time
+            time_elapsed_on_useful_work += iter_termination_check_time
 
 
-        timestamp = time.time()
-        ### SAMPLING LOGIC START ###
-        # Choose leaf node and sample IDs from it
-        sample_ids, leaf_is_now_empty, selected_leaf_idx = select_leaf_and_sample(index, algo_params, itr, pq.kth_best_score(), sample_method, batch_size)
-        realized_batch_size: int = len(sample_ids)  # If leaf has few elements left, this may be less than batch_size
-        ### SAMPLING LOGIC END ###
-        iter_sampling_time = time.time() - timestamp
-        total_time_per_category['algo'] += iter_sampling_time
-        time_elapsed_on_useful_work += iter_sampling_time
+            timestamp = time.time()
+            ### FALLBACK LOGIC START ###
+            if algo_params['type'] == 'EpsGreedy' and fallback_params['enabled']:
+                if itr + batch_size > next_fallback_check_itr:  # We should check fallback condition this iteration
+                    s_k = pq.kth_best_score()
+
+                    ### FALLBACK LEVEL 1: DYNAMIC INDEX REBUILDING
+
+                    epsgreedy_leaf_idx: List[int] = select_leaf_arm_epsgreedy(index, algo_params, float('inf'), s_k)
+                    epsgreedy_leaf_arm: IndexLeaf = index.get_grandchild(epsgreedy_leaf_idx)
+                    epsgreedy_gain = epsgreedy_leaf_arm.metadata['histogram'].expected_marginal_gain(s_k)
+                    greedy_gain: float = index.get_greedy_gain(s_k)
+
+                    # Fallback condition is met
+                    if greedy_gain > epsgreedy_gain:
+                        print(f"Fallback strategy 1 at itr {itr} as greedy gain {greedy_gain} > epsgreedy_gain {epsgreedy_gain}")
+                        index.dynamic_rebuild(s_k)
+
+                    ### FALLBACK LEVEL 2: UNIFORMSAMPLE FALLBACK
+
+                    # Estimate the expected marginal gain of the two competing algorithms
+                    average_gain: float = index.get_average_gain(s_k)
+
+                    print(f"epsgreedy_gain: {epsgreedy_gain}, greedy_gain: {greedy_gain}, average_gain: {average_gain}")
+
+                    # Estimate the amount of time spent amortized per iteration for the two competing algorithms
+                    uniform_sample_time_per_iter = (total_time_per_category['pq'] + total_time_per_category['scorer'] + total_time_per_category['other']) / itr
+                    epsgreedy_time_per_iter = uniform_sample_time_per_iter + total_time_per_category['algo'] / itr
+
+                    # Estimate the slope of the tangent line at the current iteration for the two competing algorithms
+                    uniform_sample_tangent_slope = average_gain / uniform_sample_time_per_iter
+                    epsgreedy_tangent_slope = greedy_gain / epsgreedy_time_per_iter
+
+                    #print(f"DEBUG: itr {itr}, UniformSample slope = {average_gain} / {uniform_sample_time_per_iter} = {uniform_sample_tangent_slope}")
+                    #print(f"DEBUG: itr {itr}, EpsGreedy slope = {greedy_gain} / {epsgreedy_time_per_iter} = {epsgreedy_tangent_slope}")
+
+                    # Fallback condition is met
+                    if uniform_sample_tangent_slope >= epsgreedy_tangent_slope:
+                        print(f"Fallback strategy 2 at itr {itr} as uniformsample tangent is {uniform_sample_tangent_slope} and epsgreedy tangent is {epsgreedy_tangent_slope}")
+                        # Change the algorithm to be uniform sample
+                        algo_params = { 'type': 'UniformExploration' }
+                        # Recreate the index into a flat, shuffled index
+                        leaf_elements = index.get_leaf_elements()
+                        index_dict = { 'children': leaf_elements }
+                        index: Dict = get_index_from_dict(index_dict, True)
+                        index.initialize_metadata('UniformExploration', algo_params)
+                        fallback_switch_itr = -1
+                    else:  # Fallback condition not met, check back in the next threshold
+                        next_fallback_check_itr += int(n * fallback_params['frequency'])
+            ### FALLBACK LOGIC END ###
+            iter_fallback_check_time = time.time() - timestamp
+            total_time_per_category['algo'] += iter_fallback_check_time
+            time_elapsed_on_useful_work += iter_fallback_check_time
 
 
-        timestamp = time.time()
-        ### SCORING LOGIC START ###
-        # Get the scores of the sample_ids
-        scores: List[float] = score_sample_ids(sample_ids, sampling_fn, sampling_params, scoring_fn, scoring_params, skip_scoring_fn, gt_scores)
-        ### SCORING END ###
-        iter_scoring_time = time.time() - timestamp
-        total_time_per_category['scorer'] += iter_scoring_time
-        time_elapsed_on_useful_work += iter_scoring_time
+            timestamp = time.time()
+            ### SAMPLING LOGIC START ###
+            # Choose leaf node and sample IDs from it
+            sample_ids, leaf_is_now_empty, selected_leaf_idx = select_leaf_and_sample(index, algo_params, itr, pq.kth_best_score(), sample_method, batch_size)
+            realized_batch_size: int = len(sample_ids)  # If leaf has few elements left, this may be less than batch_size
+            ### SAMPLING LOGIC END ###
+            iter_sampling_time = time.time() - timestamp
+            total_time_per_category['algo'] += iter_sampling_time
+            time_elapsed_on_useful_work += iter_sampling_time
 
 
-        timestamp = time.time()
-        ### PRIORITY QUEUE HANDLING START ###
-        # For each score, update priority queue & handle logging
-        for idx in range(realized_batch_size):
-            # Update priority queue
-            pq.insert(sample_ids[idx], scores[idx])
-        ### PRIORITY QUEUE HANDLING END ###
-        iter_pq_time = time.time() - timestamp
-        total_time_per_category['pq'] += iter_pq_time
-        time_elapsed_on_useful_work += iter_pq_time
+            timestamp = time.time()
+            ### SCORING LOGIC START ###
+            # Get the scores of the sample_ids
+            scores: List[float] = score_sample_ids(sample_ids, sampling_fn, sampling_params, scoring_fn, scoring_params, skip_scoring_fn, gt_scores)
+            ### SCORING END ###
+            iter_scoring_time = time.time() - timestamp
+            total_time_per_category['scorer'] += iter_scoring_time
+            time_elapsed_on_useful_work += iter_scoring_time
 
 
-        timestamp = time.time()
-        ### INDEX METADATA UPDATE START ###
-        for idx in range(realized_batch_size):
-            # Update metadata over the index_builder
-            index.update(algo_params['type'], selected_leaf_idx, scores[idx], pq.kth_best_score())
-        ### INDEX METADATA UPDATE END ###
-        iter_index_update_time = time.time() - timestamp
-        total_time_per_category['algo'] += iter_index_update_time
-        time_elapsed_on_useful_work += iter_index_update_time
+            timestamp = time.time()
+            ### PRIORITY QUEUE HANDLING START ###
+            # For each score, update priority queue & handle logging
+            for idx in range(realized_batch_size):
+                # Update priority queue
+                pq.insert(sample_ids[idx], scores[idx])
+            ### PRIORITY QUEUE HANDLING END ###
+            iter_pq_time = time.time() - timestamp
+            total_time_per_category['pq'] += iter_pq_time
+            time_elapsed_on_useful_work += iter_pq_time
 
 
-        # Increment iteration number
-        itr += realized_batch_size
+            timestamp = time.time()
+            ### INDEX METADATA UPDATE START ###
+            for idx in range(realized_batch_size):
+                # Update metadata over the index_builder
+                index.update(algo_params['type'], selected_leaf_idx, scores[idx], pq.kth_best_score())
+            ### INDEX METADATA UPDATE END ###
+            iter_index_update_time = time.time() - timestamp
+            total_time_per_category['algo'] += iter_index_update_time
+            time_elapsed_on_useful_work += iter_index_update_time
 
 
-        timestamp = time.time()
-        ### EMPTY LEAF CLEANUP START ###
-        # If the sample exhausted the leaf, then it needs to be cleaned up, including any recursively emptied parent
-        if leaf_is_now_empty:
-            subtract = algo_params['subtract'] if algo_params['type'] == 'EpsGreedy' else False
-            clean_empty_leaf(index, selected_leaf_idx, subtract)
-        ### EMPTY LEAF CLEANUP END ###
-        iter_empty_leaf_cleanup_time = time.time() - timestamp
-        total_time_per_category['algo'] += iter_empty_leaf_cleanup_time
-        time_elapsed_on_useful_work += iter_empty_leaf_cleanup_time
+            # Increment iteration number
+            itr += realized_batch_size
+            pbar.update(realized_batch_size)
 
 
-        # Accumulate iteration result
-        pq_elements, pq_scores = pq.get_heap()
-        iter_result = get_iter_result(pq_elements, pq_scores, gt_rankings, gt_solution, time_elapsed_on_useful_work, k)
-        for _ in range(realized_batch_size):
-            iter_results.append(iter_result)
+            timestamp = time.time()
+            ### EMPTY LEAF CLEANUP START ###
+            # If the sample exhausted the leaf, then it needs to be cleaned up, including any recursively emptied parent
+            if leaf_is_now_empty:
+                subtract = algo_params['subtract'] if algo_params['type'] == 'EpsGreedy' else False
+                clean_empty_leaf(index, selected_leaf_idx, subtract)
+            ### EMPTY LEAF CLEANUP END ###
+            iter_empty_leaf_cleanup_time = time.time() - timestamp
+            total_time_per_category['algo'] += iter_empty_leaf_cleanup_time
+            time_elapsed_on_useful_work += iter_empty_leaf_cleanup_time
+
+
+            # Accumulate iteration result
+            pq_elements, pq_scores = pq.get_heap()
+            iter_result = get_iter_result(pq_elements, pq_scores, gt_rankings, gt_solution, time_elapsed_on_useful_work, k)
+            for _ in range(realized_batch_size):
+                iter_results.append(iter_result)
 
 
     ### FINAL RESULT AGGREGATION ###
@@ -226,7 +245,7 @@ def get_iter_result(pq_elements, pq_scores, gt_rankings, gt_solution, time, k) -
         gt_k = len(gt_solution)
         iter_result["Precision@K"] = len([elem for elem in pq_elements if elem in gt_solution]) / gt_k
         iter_result["Recall@K"] = len([elem for elem in gt_solution if elem in pq_elements]) / gt_k
-        iter_result["AvgRank"] = np.sum(np.array([gt_rankings[str(elem)] for elem in pq_elements])) / gt_k
+        iter_result["AvgRank"] = (np.sum(np.array([gt_rankings[str(elem)] for elem in pq_elements])) + max(k - len(pq_scores), 0) * len(gt_rankings)) / gt_k
         iter_result["WorstRank"] = len(gt_rankings) if len(pq_scores) < k else gt_rankings[str(pq_elements[-1])]
 
     return iter_result
@@ -350,17 +369,17 @@ def select_leaf_arm_epsgreedy(node: IndexNode, algo_params: Dict, itr: int, kth_
         rand = random.random()
         if rand > eps:  # Exploitation
             children = node.children
-            max_gain = 0.0
-            best_child_idx = 0
+            child_gains = [0.0 for _ in range(len(children))]
             # Find the child with the highest expected marginal gain
             for idx, child in enumerate(children):
                 if isinstance(child, IndexLeaf) and child.remaining_size() == 0:
-                    gain = 0.0
+                    continue
                 else:
                     gain = child.metadata['histogram'].expected_marginal_gain(kth_best_score)
-                if gain > max_gain:  # Update the best child
-                    best_child_idx = idx
-                    max_gain = gain
+                    child_gains[idx] = gain
+            max_gain = max(child_gains)
+            best_children_idxs = [idx for idx, child in enumerate(children) if child_gains[idx] >= max_gain]
+            best_child_idx = random.choice(best_children_idxs)
             greedy_arm = [best_child_idx] + select_leaf_arm_epsgreedy(node.get_child_at(best_child_idx), algo_params, itr, kth_best_score)
             return greedy_arm
         else:  # Exploration
@@ -386,9 +405,12 @@ def get_initialized_index(index_filename, sample_method, algo_params) -> Dict:
     with open(index_filename, 'r') as file:
         index_dict: Dict = json.load(file)
 
+    if sample_method == "reversescan":
+        index_dict["children"].reverse()
+
     # Shuffle the clusters in the index if sample method is random, otherwise leave insertion order
-    shuffle_elements_in_index: bool = False if sample_method == "scan" else True
-    index: Dict = get_index_from_dict(index_dict, shuffle_elements_in_index)
+    shuffle_elements_in_index: bool = False if (sample_method == "scan" or sample_method == "sortedscan" or sample_method == "reversescan") else True
+    index: IndexNode = get_index_from_dict(index_dict, shuffle_elements_in_index)
 
     index.initialize_metadata(algo_params['type'], algo_params)
 
@@ -403,7 +425,7 @@ def select_leaf_and_sample(index: IndexNode, algo_params: Dict, itr: int, kth_be
     if sample_method == "replace":
         sample_ids = leaf_node.sample_with_replacement(batch_size)
         leaf_is_now_empty = False
-    elif sample_method == "noreplace" or sample_method == "scan":
+    elif sample_method == "noreplace" or sample_method == "scan" or sample_method == "sortedscan":
         sample_ids, leaf_is_now_empty = leaf_node.sample_without_replacement(batch_size)
     else:
         raise ValueError

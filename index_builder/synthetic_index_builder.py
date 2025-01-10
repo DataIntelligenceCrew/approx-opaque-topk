@@ -15,9 +15,8 @@ USAGE: python synthetic_index_builder.py --dendrogram_file <dendrogram_file> --f
     -n <n> --stdev_max <stdev_max> --stdev_min <stdev_min> --mu_max <mu_max> --mu_min <mu_min>
 """
 
-running_seed = 42
-
-def generate_random_distributions(k: int, n: int, mu_min: float, mu_max: float, stdev_min: float, stdev_max: float) -> Tuple[List[List[str]], np.ndarray]:
+def generate_random_distributions(k: int, n: int, mu_min: float, mu_max: float, stdev_min: float, stdev_max: float,
+                                  seed: int = 42) -> Tuple[List[List[str]], np.ndarray]:
     """
     Creates k random normal distributions, generates n samples from each distribution, and returns the samples and
     the means of the distributions.
@@ -28,17 +27,21 @@ def generate_random_distributions(k: int, n: int, mu_min: float, mu_max: float, 
     :param stdev_min: Minimum standard deviation possible.
     :param mu_max: Maximum mean possible.
     :param mu_min: Minimum mean possible.
+    :param seed: A seed for reproducibility.
     :return: A list of samples and the means of the distributions.
     """
     # Randomly generate means and stdevs
+    np.random.seed(seed)
     means_: np.ndarray = np.random.uniform(mu_min, mu_max, k)
     stdevs: np.ndarray = np.random.uniform(stdev_min, stdev_max, k)
+
     # Draw samples
     samples: List[List[str]] = []  # A 2-dimensional list of shape (k, n)
     for k_ in range(k):
         scores: np.ndarray = np.random.normal(loc=means_[k_], scale=stdevs[k_], size=n)
         scores: List[str] = [str(x) for x in scores]
         samples.append(scores)
+
     return samples, means_
 
 if __name__ == '__main__':
@@ -66,6 +69,7 @@ if __name__ == '__main__':
                         help='Minimum range to draw standard deviation from.')
     parser.add_argument('--stdev-max', type=float, required=False, default=5.0,
                         help='Maximum range to draw standard deviation from.')
+    parser.add_argument('--seed', type=int, required=False, default=42)
     args = parser.parse_args()
 
     # Cluster the vectors and get the corresponding strings
@@ -78,6 +82,7 @@ if __name__ == '__main__':
         mu_max=args.mu_max,
         stdev_min=args.stdev_min,
         stdev_max=args.stdev_max,
+        seed=args.seed
     )
 
     # Flatten the samples

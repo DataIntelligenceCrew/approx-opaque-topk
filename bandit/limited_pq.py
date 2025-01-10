@@ -62,3 +62,47 @@ class LimitedPQ:
             "kth_best_score": self.kth_best_score(),
             "sum_top_k": sum(scores)
         }
+
+
+class LimitedList:
+    """
+    A list that holds elements and their scores, with size bounded by k. Adding any new element beyond k does nothing.
+    """
+    def __init__(self, cardinality_constraint: int):
+        self._k: int = cardinality_constraint
+        self._heap: List = []
+
+    def insert(self, element: str, score: float):
+        """
+        """
+        if len(self._heap) >= self._k:
+            return
+        else:
+            self._heap.append((score, element))
+
+    def get_heap(self) -> Tuple[List[str], List[float]]:
+        """
+        """
+        scores, elements = zip(*self._heap)
+        return elements, scores
+
+    def kth_best_score(self) -> float:
+        """
+        :return: The score of the kth best element in the queue.
+        """
+        if len(self._heap) < self._k:
+            return 0.0
+        else:
+            return self._heap[self._k-1][0]
+
+    def to_dict(self) -> Dict:
+        """
+        :return: A dictionary representation of the queue. Useful for JSON serialization.
+        """
+        elements, scores = self.get_heap()
+        return {
+            "elements": elements,
+            "scores": scores,
+            "kth_best_score": self.kth_best_score(),
+            "sum_top_k": sum(scores)
+        }

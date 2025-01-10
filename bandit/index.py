@@ -1,5 +1,6 @@
 import json
 import random
+from copy import deepcopy
 from typing import List, Dict, Union, Tuple
 
 import pandas as pd
@@ -204,10 +205,14 @@ class IndexLeaf:
             raise ValueError('Attempted to obtain marginal gain from a node without histogram metadata.')
 
     def get_greedy_gain(self, kth_largest_score):
+        #print(self.metadata['histogram'], self.get_gain(kth_largest_score))
         return self.get_gain(kth_largest_score)
 
     def get_average_gain(self, kth_largest_score):
         return self.get_gain(kth_largest_score)
+
+    def get_leaf_nodes(self):
+        return [self]
 
     def get_leaf_elements(self):
         return self.children
@@ -327,11 +332,26 @@ class IndexNode:
         child: Union[Self, IndexLeaf] = self.get_child_at(selected_leaf_idx[0])
         child.update(algorithm, selected_leaf_idx[1:], score, kth_largest_score)
 
+    def get_leaf_nodes(self):
+        elems = []
+        for child in self.children:
+            elems += child.get_leaf_nodes()
+        return elems
+
     def get_leaf_elements(self):
         elems = []
         for child in self.children:
             elems += child.get_leaf_elements()
         return elems
+
+    def dynamic_rebuild(self, s_k: float):
+        """
+        Rebuild the tree dynamically based on the expected marginal gain of leaf nodes.
+
+        :param s_k: The current S_(k) value used for computing marginal gain.
+        """
+        leaf_nodes = self.get_leaf_nodes()
+        self.children = leaf_nodes
 
 
 def store_index_to_json(index: IndexNode, filename: str):

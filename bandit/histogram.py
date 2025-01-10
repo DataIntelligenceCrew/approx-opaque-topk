@@ -126,7 +126,8 @@ class Histogram:
         if self._enlarge_lowest:
             if kth_largest_score > self._bin_borders[2]:
                 #print("enlarge lowest as S_(k) is", kth_largest_score, "compared to bin border", self._bin_borders[2])
-                new_borders_tail: List[float] = uniformly_divide_range(kth_largest_score, self._bin_borders[-1], self._num_bins - 1)
+                new_max_range: float = kth_largest_score * self._enlarge_factor if kth_largest_score >= self._bin_borders[-1] else self._bin_borders[-1]
+                new_borders_tail: List[float] = uniformly_divide_range(kth_largest_score, new_max_range, self._num_bins - 1)
                 new_borders: List[float] = [self._bin_borders[0]] + new_borders_tail
                 #print("new borders:", new_borders)
                 self.rebin(new_borders)

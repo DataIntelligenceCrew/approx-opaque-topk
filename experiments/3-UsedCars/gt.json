@@ -6,7 +6,7 @@
   },
   "sampling_params": {
     "type": "dataframe",
-    "file": "/home/jwc/Data/UsedCars/used_cars_val.csv",
+    "file": "/home/jwc/Data/UsedCars/used_cars_val.parquet",
     "id_col": "listing_id",
     "exclude_cols": ["price"]
   },
@@ -14,5 +14,5 @@
   "index_params": {
     "file": "/home/jwc/approx-topk/Temp/Index/UsedCars/flattened.json"
   },
-  "batch_size": 1000
+  "batch_size": 1
 }

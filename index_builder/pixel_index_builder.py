@@ -52,7 +52,7 @@ def process_single_image(args) -> np.ndarray:
     return get_image_vector(image_path, target_size)
 
 
-def subsample_images(directory: str, num_samples: int, target_size: Tuple[int, int]) -> List[np.ndarray]:
+def subsample_images(directory: str, num_samples: int, target_size: Tuple[int, int], seed: int) -> List[np.ndarray]:
     """
     Uniformly subsample a specified number of images from the directory,
     preprocess them to the same dimensions, and return their flattened 1-D vector representations.
@@ -67,6 +67,7 @@ def subsample_images(directory: str, num_samples: int, target_size: Tuple[int, i
 
     num_samples: int = min(num_samples, len(image_files))
 
+    random.seed(seed)
     sampled_files: List[str] = random.sample(image_files, num_samples)
     print("Selected a subsample of filenames")
 
@@ -76,7 +77,7 @@ def subsample_images(directory: str, num_samples: int, target_size: Tuple[int, i
     return vectors
 
 
-def perform_kmeans(vectors: list, n_clusters: int) -> np.ndarray:
+def perform_kmeans(vectors: list, n_clusters: int, seed: int) -> np.ndarray:
     """
     Perform constrained k-means clustering over the vectors and return the centroids.
 
@@ -91,6 +92,8 @@ def perform_kmeans(vectors: list, n_clusters: int) -> np.ndarray:
         n_clusters=n_clusters,
         #size_min=size_min,
         verbose=1,
+        random_state=seed,
+        n_init=1
     )
     kmeans.fit(vectors)
     centroids: np.ndarray = kmeans.cluster_centers_
@@ -176,6 +179,7 @@ if __name__ == '__main__':
     parser.add_argument('-k', type=int, required=True)
     parser.add_argument('--subsample-size', type=int, required=True)
     parser.add_argument('--image-directory', type=str, required=True)
+    parser.add_argument('--seed', type=int, required=False, default=42)
     args = parser.parse_args()
     print("Parsed arguments", time.time() - start_time)
 
@@ -183,11 +187,11 @@ if __name__ == '__main__':
     n = 320291
 
     # Subsample images from directory, then apply k-means over it
-    subsample = subsample_images(args.image_directory, args.subsample_size, (16, 16))
+    subsample = subsample_images(args.image_directory, args.subsample_size, (16, 16), args.seed)
 
     print("Obtained subsample vectors", time.time() - start_time)
 
-    centroids = perform_kmeans(subsample, args.k)
+    centroids = perform_kmeans(subsample, args.k, args.seed)
 
     print("Applied kmeans", time.time() - start_time)
 

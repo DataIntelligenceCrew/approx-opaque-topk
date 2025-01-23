@@ -55,6 +55,8 @@ def get_imagenet_classifier_scorer(scorer_params: Dict) -> Callable:
 
         # Batch the inputs
         input_tensors = [preprocess(image.convert('RGB')) for image in scorer_inputs]
+        if len(input_tensors) == 0:
+            return []
         input_batch = torch.stack(input_tensors)
 
         # Send model and inputs to device (GPU)

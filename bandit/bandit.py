@@ -120,12 +120,12 @@ def approx_top_k_bandit(index_params: Dict, k: int, scoring_fn: Callable, scorin
                     print(f"epsgreedy_gain: {epsgreedy_gain}, greedy_gain: {greedy_gain}, average_gain: {average_gain}")
 
                     # Estimate the amount of time spent amortized per iteration for the two competing algorithms
-                    uniform_sample_time_per_iter = (total_time_per_category['pq'] + total_time_per_category['scorer'] + total_time_per_category['other']) / itr
-                    epsgreedy_time_per_iter = uniform_sample_time_per_iter + total_time_per_category['algo'] / itr
+                    #uniform_sample_time_per_iter = (total_time_per_category['pq'] + total_time_per_category['scorer'] + total_time_per_category['other']) / itr
+                    #epsgreedy_time_per_iter = uniform_sample_time_per_iter + total_time_per_category['algo'] / itr
 
                     # Estimate the slope of the tangent line at the current iteration for the two competing algorithms
-                    uniform_sample_tangent_slope = average_gain / uniform_sample_time_per_iter
-                    epsgreedy_tangent_slope = greedy_gain / epsgreedy_time_per_iter
+                    uniform_sample_tangent_slope = average_gain #/ uniform_sample_time_per_iter
+                    epsgreedy_tangent_slope = greedy_gain #/ epsgreedy_time_per_iter
 
                     #print(f"DEBUG: itr {itr}, UniformSample slope = {average_gain} / {uniform_sample_time_per_iter} = {uniform_sample_tangent_slope}")
                     #print(f"DEBUG: itr {itr}, EpsGreedy slope = {greedy_gain} / {epsgreedy_time_per_iter} = {epsgreedy_tangent_slope}")
@@ -164,6 +164,7 @@ def approx_top_k_bandit(index_params: Dict, k: int, scoring_fn: Callable, scorin
             ### SCORING LOGIC START ###
             # Get the scores of the sample_ids
             scores: List[float] = score_sample_ids(sample_ids, sampling_fn, sampling_params, scoring_fn, scoring_params, skip_scoring_fn, gt_scores)
+            realized_batch_size_2 = min(realized_batch_size, len(scores))
             ### SCORING END ###
             iter_scoring_time = time.time() - timestamp
             total_time_per_category['scorer'] += iter_scoring_time
@@ -173,7 +174,7 @@ def approx_top_k_bandit(index_params: Dict, k: int, scoring_fn: Callable, scorin
             timestamp = time.time()
             ### PRIORITY QUEUE HANDLING START ###
             # For each score, update priority queue & handle logging
-            for idx in range(realized_batch_size):
+            for idx in range(realized_batch_size_2):
                 # Update priority queue
                 pq.insert(sample_ids[idx], scores[idx])
             ### PRIORITY QUEUE HANDLING END ###
@@ -184,7 +185,7 @@ def approx_top_k_bandit(index_params: Dict, k: int, scoring_fn: Callable, scorin
 
             timestamp = time.time()
             ### INDEX METADATA UPDATE START ###
-            for idx in range(realized_batch_size):
+            for idx in range(realized_batch_size_2):
                 # Update metadata over the index_builder
                 index.update(algo_params['type'], selected_leaf_idx, scores[idx], pq.kth_best_score())
             ### INDEX METADATA UPDATE END ###
@@ -434,6 +435,8 @@ def select_leaf_and_sample(index: IndexNode, algo_params: Dict, itr: int, kth_be
 def score_sample_ids(sample_ids: List, sampling_fn: Callable, sampling_params: Dict, scoring_fn: Callable, scoring_params: Dict, skip_scoring_fn: bool, gt_scores: Dict) -> List[float]:
     if not skip_scoring_fn:
         objects: List[Any] = sampling_fn(sample_ids, sampling_params)
+        if len(objects) == 0:
+            return []
         scores: List[float] = scoring_fn(objects, scoring_params)
     else:
         scores: List[float] = [gt_scores[idx] for idx in sample_ids]

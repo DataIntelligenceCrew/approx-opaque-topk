@@ -23,8 +23,6 @@ python tabular_index_builder.py --input_file <path_to_input_file> -k 500 --dendr
 ```
 The paths will differ depending on where the dataset and indexes are stored. We assume that the id_column has type string to simplify typing in the Python side of the code base. 
 
-python tabular_index_builder.py --input_file ~/Data/UsedCars/used_cars_val.parquet -k 500 --dendrogram_file ../Temp/Index/UsedCars/dendrogram.json --flattened_file ../Temp/Index/UsedCars/flattened.json --subsample_size 100000 --id_column listing_id --pred_column price --seed 24
-
 ## Image
 
 Index for ImageNet is built using the following steps. 
@@ -35,6 +33,6 @@ Index for ImageNet is built using the following steps.
 
 The specific command that we used is the following. 
 ```
-python3 pixel_index_builder.py --dendrogram-file <dendrogram_file> --flattened-file <flattened_file> -k 500 --subsample-size 100000 --image-directory <image_directory>
+python3 pixel_index_builder.py --dendrogram-file <dendrogram_file> --flattened-file <flattened_file> -k 25 --subsample-size 100000 --image-directory <image_directory>
 ```
 The paths will differ depending on where the dataset and indexes are stored. 

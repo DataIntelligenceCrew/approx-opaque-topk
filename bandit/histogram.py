@@ -131,6 +131,9 @@ class Histogram:
                 new_borders: List[float] = [self._bin_borders[0]] + new_borders_tail
                 #print("new borders:", new_borders)
                 self.rebin(new_borders)
+                for idx in range(self._num_bins):
+                    if self._bin_counts[idx] <= 0.0:
+                        self._bin_counts[idx] = 0.00001  # Helps prevent numerical issues
                 #print(self)
         # Check each bin to see if the score falls into it, and increment the count if so
         for b in range(self._num_bins):

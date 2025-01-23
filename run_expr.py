@@ -87,15 +87,26 @@ if __name__ == '__main__':
                 results.append(metrics)
                 print(f"Completed {expr_name} rep {rep}")
 
-        # Aggregate results
+        # Determine the minimum lengths for all metrics
+        min_lengths = {
+            "STK": min(len(res["STK"]) for res in results),
+            "KLS": min(len(res["KLS"]) for res in results),
+            "time": min(len(res["time"]) for res in results),
+            "Precision@K": min(len(res["Precision@K"]) for res in results),
+            "Recall@K": min(len(res["Recall@K"]) for res in results),
+            "AvgRank": min(len(res["AvgRank"]) for res in results),
+            "WorstRank": min(len(res["WorstRank"]) for res in results)
+        }
+
+        # Aggregate results with truncation to the minimum lengths
         aggregated = {
-            "STK": list(np.mean([res["STK"] for res in results], axis=0)),
-            "KLS": list(np.mean([res["KLS"] for res in results], axis=0)),
-            "time": list(np.mean([res["time"] for res in results], axis=0)),
-            "Precision@K": list(np.mean([res["Precision@K"] for res in results], axis=0)),
-            "Recall@K": list(np.mean([res["Recall@K"] for res in results], axis=0)),
-            "AvgRank": list(np.mean([res["AvgRank"] for res in results], axis=0)),
-            "WorstRank": list(np.mean([res["WorstRank"] for res in results], axis=0)),
+            "STK": list(np.mean([res["STK"][:min_lengths["STK"]] for res in results], axis=0)),
+            "KLS": list(np.mean([res["KLS"][:min_lengths["KLS"]] for res in results], axis=0)),
+            "time": list(np.mean([res["time"][:min_lengths["time"]] for res in results], axis=0)),
+            "Precision@K": list(np.mean([res["Precision@K"][:min_lengths["Precision@K"]] for res in results], axis=0)),
+            "Recall@K": list(np.mean([res["Recall@K"][:min_lengths["Recall@K"]] for res in results], axis=0)),
+            "AvgRank": list(np.mean([res["AvgRank"][:min_lengths["AvgRank"]] for res in results], axis=0)),
+            "WorstRank": list(np.mean([res["WorstRank"][:min_lengths["WorstRank"]] for res in results], axis=0)),
             "overhead_one_time": np.mean([res["overhead_one_time"] for res in results]),
             "overhead_algo": np.mean([res["overhead_algo"] for res in results]),
             "overhead_pq": np.mean([res["overhead_pq"] for res in results]),

@@ -2,12 +2,12 @@
   "EpsGreedy (B=4)": {
     "scoring_params": {
       "type": "xgboost",
-      "model_path": "/home/jwc/approx-topk/Temp/Models/usedcars_model.json",
+      "model_path": "<project-root>/Temp/Models/usedcars_model.json",
       "exclude_cols": ["listing_id", "price"]
     },
     "sampling_params": {
       "type": "dataframe",
-      "file": "/home/jwc/Data/UsedCars/used_cars_val.parquet",
+      "file": "<project-root>/Data/UsedCars/used_cars_val.parquet",
       "id_col": "listing_id",
       "exclude_cols": ["price"]
     },
@@ -26,7 +26,7 @@
     "reps": 5,
     "k": 250,
     "index_params": {
-      "file": "/home/jwc/approx-topk/Temp/Index/UsedCars/dendrogram.json"
+      "file": "<project-root>/Temp/Index/UsedCars/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 1,
@@ -38,12 +38,12 @@
   "EpsGreedy (B=8)": {
     "scoring_params": {
       "type": "xgboost",
-      "model_path": "/home/jwc/approx-topk/Temp/Models/usedcars_model.json",
+      "model_path": "<project-root>/Temp/Models/usedcars_model.json",
       "exclude_cols": ["listing_id", "price"]
     },
     "sampling_params": {
       "type": "dataframe",
-      "file": "/home/jwc/Data/UsedCars/used_cars_val.parquet",
+      "file": "<project-root>/Data/UsedCars/used_cars_val.parquet",
       "id_col": "listing_id",
       "exclude_cols": ["price"]
     },
@@ -62,7 +62,7 @@
     "reps": 5,
     "k": 250,
     "index_params": {
-      "file": "/home/jwc/approx-topk/Temp/Index/UsedCars/dendrogram.json"
+      "file": "<project-root>/Temp/Index/UsedCars/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 1,
@@ -74,12 +74,12 @@
   "EpsGreedy (B=16)": {
     "scoring_params": {
       "type": "xgboost",
-      "model_path": "/home/jwc/approx-topk/Temp/Models/usedcars_model.json",
+      "model_path": "<project-root>/Temp/Models/usedcars_model.json",
       "exclude_cols": ["listing_id", "price"]
     },
     "sampling_params": {
       "type": "dataframe",
-      "file": "/home/jwc/Data/UsedCars/used_cars_val.parquet",
+      "file": "<project-root>/Data/UsedCars/used_cars_val.parquet",
       "id_col": "listing_id",
       "exclude_cols": ["price"]
     },
@@ -98,7 +98,7 @@
     "reps": 5,
     "k": 250,
     "index_params": {
-      "file": "/home/jwc/approx-topk/Temp/Index/UsedCars/dendrogram.json"
+      "file": "<project-root>/Temp/Index/UsedCars/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 1,
@@ -110,12 +110,12 @@
   "EpsGreedy (B=32)": {
     "scoring_params": {
       "type": "xgboost",
-      "model_path": "/home/jwc/approx-topk/Temp/Models/usedcars_model.json",
+      "model_path": "<project-root>/Temp/Models/usedcars_model.json",
       "exclude_cols": ["listing_id", "price"]
     },
     "sampling_params": {
       "type": "dataframe",
-      "file": "/home/jwc/Data/UsedCars/used_cars_val.parquet",
+      "file": "<project-root>/Data/UsedCars/used_cars_val.parquet",
       "id_col": "listing_id",
       "exclude_cols": ["price"]
     },
@@ -134,7 +134,7 @@
     "reps": 5,
     "k": 250,
     "index_params": {
-      "file": "/home/jwc/approx-topk/Temp/Index/UsedCars/dendrogram.json"
+      "file": "<project-root>/Temp/Index/UsedCars/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 1,

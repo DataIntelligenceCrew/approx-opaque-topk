@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "approx-opaque-topk"
+version = "1.0.0"
+description = "Code for \"Approximating Opaque Top-k Queries\" by Chang and Nargesian."
+requires-python = ">=3.8,<3.9"
+
+dependencies = [
+  # --- Core numerics / arrays ---
+  "numpy==1.24.3",
+  "scipy==1.10.1",
+  "numexpr==2.8.4",
+  "bottleneck==1.3.7",
+  "mpmath==1.3.0",
+  "sympy==1.13.2",
+
+  # --- Data handling ---
+  "pandas==2.0.3",
+  "PyYAML==6.0.1",
+  "python-dateutil==2.9.0.post0",
+  "pytz==2024.1",
+  "tzdata==2023.3",
+
+  # --- ML libs ---
+  "scikit-learn==1.3.0",
+  "xgboost==2.1.1",
+
+  # --- PyTorch CUDA 11.8 wheels ---
+  "torch==2.4.1+cu118",
+  "torchvision==0.19.1+cu118",
+  "torchaudio==2.4.1+cu118",
+  "triton==3.0.0",
+
+  # --- Imaging ---
+  "Pillow==10.4.0",
+
+  # --- Utilities ---
+  "filelock==3.13.1",
+  "joblib==1.4.2",
+  "threadpoolctl==3.5.0",
+  "typing_extensions==4.12.2",
+  "packaging==24.1",
+  "platformdirs==3.10.0",
+  "pooch==1.7.0",
+  "min-max-heap==1.0.1",
+  "networkx==3.1",
+  "gmpy2==2.1.2",
+
+  # --- HTTP stack ---
+  "requests==2.32.3",
+  "charset-normalizer==3.3.2",
+  "idna==3.7",
+  "urllib3==2.2.3",
+  "PySocks==1.7.1",
+  "certifi==2024.8.30",
+
+  # --- Templating ---
+  "Jinja2==3.1.4",
+  "MarkupSafe==2.1.3",
+
+  # --- Compression ---
+  "brotli==1.0.9",
+
+  # --- Added by request ---
+  "kagglehub",
+]
+
+[tool.uv]
+# Make PyPI primary, add the PyTorch CUDA wheels index, and allow searching
+# all indexes so uv won't get "stuck" on a numpy version from the first index.
+index-url = "https://pypi.org/simple"
+extra-index-url = ["https://download.pytorch.org/whl/cu118"]
+index-strategy = "unsafe-best-match"

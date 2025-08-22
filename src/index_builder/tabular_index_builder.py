@@ -73,7 +73,7 @@ def kmeans_clustering(df: pd.DataFrame, n_clusters: int, subsample_size: int, ex
     return clusters, centroids
 
 
-def agglomerative_clustering_and_build_tree(centroids: np.ndarray, clusters: List[Any], id_column: str, balanced: bool = True) -> Dict:
+def agglomerative_clustering_and_build_tree(centroids: np.ndarray, clusters: List[Any], id_column: str, balanced: bool = False) -> Dict:
     """
     Perform hierarchical agglomerative clustering on the centroids and build a human-readable tree structure.
     Supports both balanced and unbalanced clustering methods.
@@ -81,36 +81,31 @@ def agglomerative_clustering_and_build_tree(centroids: np.ndarray, clusters: Lis
     :param centroids: The cluster centroids from k-means.
     :param clusters: The list of DataFrames or structures representing each cluster.
     :param id_column: The name of the ID column to store at leaf nodes.
-    :param balanced: Whether to use the balanced clustering method (default: True).
+    :param balanced: Whether to use the balanced clustering method (default: False).
     :return: A dictionary representing the tree structure.
     """
-    if balanced:
-        # Use the balanced HAC method
-        tree_structure = balanced_hac(centroids, [[df[id_column].tolist()] for df in clusters])
-    else:
-        # Perform standard HAC using scipy's linkage
-        z_: np.ndarray = linkage(centroids, method='average')
-        root_node, _ = to_tree(z_, rd=True)
+    z_: np.ndarray = linkage(centroids, method='average')
+    root_node, _ = to_tree(z_, rd=True)
 
-        # Build the tree dictionary for standard HAC
-        def build_tree_dict(node) -> dict:
-            if node.is_leaf():
-                # Leaf node: return the ID column as a list
-                cluster_df = clusters[node.id]
-                ids = cluster_df[id_column].tolist()
-                return {
-                    'children': ids
-                }
-            else:
-                # Intermediate node: recursively build its children
-                return {
-                    'children': [
-                        build_tree_dict(node.get_left()),
-                        build_tree_dict(node.get_right())
-                    ]
-                }
+    # Build the tree dictionary for standard HAC
+    def build_tree_dict(node) -> dict:
+        if node.is_leaf():
+            # Leaf node: return the ID column as a list
+            cluster_df = clusters[node.id]
+            ids = cluster_df[id_column].tolist()
+            return {
+                'children': ids
+            }
+        else:
+            # Intermediate node: recursively build its children
+            return {
+                'children': [
+                    build_tree_dict(node.get_left()),
+                    build_tree_dict(node.get_right())
+                ]
+            }
 
-        tree_structure = build_tree_dict(root_node)
+    tree_structure = build_tree_dict(root_node)
 
     return tree_structure
 

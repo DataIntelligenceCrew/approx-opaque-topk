@@ -4,8 +4,8 @@ import time
 from typing import Dict, List, Tuple, Callable, Any
 from tqdm import tqdm  # Import tqdm for progress bar
 
-from bandit.samplers import get_sampler_from_params
-from bandit.scorers import get_scorer_from_params
+from src.bandit import get_sampler_from_params
+from src.bandit import get_scorer_from_params
 
 """
 The ground truth (gt) run over a particular query configuration simply scans over all data points while keeping track 

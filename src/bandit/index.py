@@ -6,7 +6,7 @@ from typing import List, Dict, Union, Tuple
 import pandas as pd
 from typing_extensions import Self
 
-from bandit.histogram import Histogram
+from src.bandit.histogram import Histogram
 
 """
 The index_builder builder methods build the index_builder as a JSON file. 

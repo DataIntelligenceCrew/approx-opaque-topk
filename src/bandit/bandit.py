@@ -7,8 +7,8 @@ from typing import List, Callable, Union, Dict, Set, Any, Tuple
 
 import numpy as np
 
-from bandit.index import IndexNode, IndexLeaf, get_index_from_dict
-from bandit.limited_pq import LimitedPQ, LimitedList
+from src.bandit.index import IndexNode, IndexLeaf, get_index_from_dict
+from src.bandit.limited_pq import LimitedPQ, LimitedList
 
 
 def approx_top_k_bandit(index_params: Dict, k: int, scoring_fn: Callable, scoring_params: Dict, sampling_fn: Callable,

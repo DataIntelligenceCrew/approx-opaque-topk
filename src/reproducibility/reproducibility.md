@@ -16,7 +16,7 @@ mkdir temp/imagenet
 mkdir temp/plots
 ```
 
-After `cd reproducibility` all commands henceforth are being run from the `reproducibility` directory root. 
+All commands henceforth are being run from the `reproducibility` directory root. 
 
 ## 3 Build indexes
 

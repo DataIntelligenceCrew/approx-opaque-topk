@@ -1,0 +1,14 @@
+{
+  "scoring_params": {
+    "type": "relu",
+    "delay": 0
+  },
+  "sampling_params": {
+    "type": "synthetic"
+  },
+  "k": 100,
+  "index_params": {
+    "file": "temp/synthetic/flattened.json"
+  },
+  "batch_size": 1
+}

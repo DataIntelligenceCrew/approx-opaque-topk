@@ -1,0 +1,518 @@
+{
+  "ScanBestOrder": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "UniformExploration"
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-sorted.json"
+    },
+    "sample_method": "scan",
+    "batch_size": 400,
+    "skip_scoring_fn": true,
+    "fallback_params": {
+      "enabled": false
+    }
+  },
+  "ScanWorstOrder": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "UniformExploration"
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-sorted.json"
+    },
+    "sample_method": "reversescan",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": false
+    }
+  },
+  "SortedIndexScan": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "UniformExploration"
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-sorted.json"
+    },
+    "sample_method": "sortedscan",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": false
+    }
+  },
+  "EpsGreedy": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 4.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": true,
+      "initial_threshold": 0.3,
+      "frequency": 0.01
+    }
+  },
+  "UniformExploration": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "UniformExploration"
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": false
+    }
+  },
+  "UniformSample": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "UniformExploration"
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-flattened.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": false
+    }
+  },
+  "UCB": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "UCB",
+      "c": 1.0,
+      "init": 0.5
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": false
+    }
+  },
+  "EpsGreedy (F=5%)": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 4.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": true,
+      "initial_threshold": 0.3,
+      "frequency": 0.05
+    }
+  },
+  "EpsGreedy (F=10%)": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 4.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": true,
+      "initial_threshold": 0.3,
+      "frequency": 0.1
+    }
+  },
+  "EpsGreedy (F=25%)": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 4.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": true,
+      "initial_threshold": 0.3,
+      "frequency": 0.25
+    }
+  },
+  "EpsGreedy (No Rebinning)": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 4.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": false,
+      "subtract": true
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": true,
+      "initial_threshold": 0.3,
+      "frequency": 0.01
+    }
+  },
+  "EpsGreedy (No Subtraction)": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 4.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": false
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": true,
+      "initial_threshold": 0.3,
+      "frequency": 0.01
+    }
+  },
+  "EpsGreedy (No Fallback)": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 4.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": false
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 400,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": false
+    }
+  },
+  "EpsGreedy (Batch=100)": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 4.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 100,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": true,
+      "initial_threshold": 0.3,
+      "frequency": 0.01
+    }
+  },
+  "EpsGreedy (Batch=200)": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 4.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 200,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": true,
+      "initial_threshold": 0.3,
+      "frequency": 0.01
+    }
+  },
+  "EpsGreedy (Batch=800)": {
+    "scoring_params": {
+      "type": "classify",
+      "target_idx": 437,
+      "device": "cuda"
+    },
+    "sampling_params": {
+      "type": "image_directory",
+      "directory_path": "<imagenet-dir>"
+    },
+    "algo_params": {
+      "type": "EpsGreedy",
+      "alpha": 4.0,
+      "max": 1.0,
+      "min": 0.0,
+      "num_bins": 8,
+      "rebin_decay": 1.0,
+      "enlarge_max_factor": 1.1,
+      "enlarge_lowest": true,
+      "subtract": true
+    },
+    "budget": 320000,
+    "reps": 10,
+    "k": 1000,
+    "index_params": {
+      "file": "temp/imagenet/437-dendrogram.json"
+    },
+    "sample_method": "noreplace",
+    "batch_size": 800,
+    "skip_scoring_fn": false,
+    "fallback_params": {
+      "enabled": true,
+      "initial_threshold": 0.3,
+      "frequency": 0.01
+    }
+  }
+}

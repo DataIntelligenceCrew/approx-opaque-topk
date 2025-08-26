@@ -1,8 +1,12 @@
+# Reproducibility instructions
+
 NOTE:
 - This reproducibility procedure was tested on a fresh machine. 
 - We did not implement reproducible randomness for the stochastic algorithms, so while general trends should hold (since we repeat each experiment 10+ times), exact result might vary from the plots published in the paper. 
 
 ## 1 Create virtual environment
+
+Run from repository root:
 
 ```bash
 uv sync --python 3.8
@@ -15,14 +19,10 @@ source .venv/bin/activate
 
 ```bash
 cd src/reproducibility
-mkdir temp
-mkdir temp/synthetic
-mkdir temp/usedcars
-mkdir temp/imagenet
-mkdir temp/plots
+mkdir temp; mkdir temp/synthetic; mkdir temp/usedcars; mkdir temp/imagenet; mkdir temp/plots
 ```
 
-All commands henceforth are being run from the `reproducibility` directory root. 
+All commands henceforth are being run from the `src/reproducibility` directory. 
 
 
 
@@ -34,28 +34,17 @@ All commands henceforth are being run from the `reproducibility` directory root.
 python ../index_builder/synthetic_index_builder.py --dendrogram-file temp/synthetic/dendrogram.json --flattened-file temp/synthetic/flattened.json -k 20 -n 2500 --stdev-max 0.0 --stdev-min 5.0 --mu-max 0.0 --mu-min 20.0
 ```
 
-Expected files:
-- `./temp/synthetic/dendrogram.json`
-- `./temp/synthetic/flattened.json`
-
 ### Execute ground truth run
 
 ```bash
 python ../../run_gt.py ../experiments/synthetic/k100_gt.json temp/synthetic/k100_gt.json temp/synthetic/k100_sorted.json
 ```
 
-Expected files:
-- `./temp/synthetic/k100_gt.json`
-- `./temp/synthetic/k100_sorted.json`
-
 ### Run main experiments
 
 ```bash
 python ../../run_expr.py ../experiments/synthetic/k100_all.json temp/synthetic/k100_gt.json temp/synthetic/k100_result.json
 ```
-
-Expected files:
-- `./temp/synthetic/k100_result.json`
 
 ### Create plots
 
@@ -81,22 +70,11 @@ python ../index_builder/usedcars_train.py --label-col price temp/usedcars/
 python ../index_builder/tabular_index_builder.py --input_file temp/usedcars/used_cars_val.parquet -k 500 --dendrogram_file temp/usedcars/dendrogram.json --flattened_file temp/usedcars/flattened.json --subsample_size 100000 --id_column listing_id --pred_column price --time_file temp/usedcars/index_time.txt
 ```
 
-Expected files:
-- `./temp/usedcars/usedcars.csv`
-- `./temp/usedcars/used_cars_[clean/test/train/val].parquet`
-- `./temp/usedcars/usedcars_model.json`
-- `./temp/usedcars/dendrogram.json`
-- `./temp/usedcars/flattened.json`
-- `./temp/usedcars/index_time.txt`
-
 ### Execute ground truth run
 
 ```bash
 python ../../run_gt.py ../experiments/usedcars/gt.json temp/usedcars/gt.json temp/usedcars/sorted.json
 ```
-
-- `./temp/usedcars/gt.json`
-- `./temp/usedcars/sorted.json`
 
 ### Run main experiments
 
@@ -106,11 +84,8 @@ python ../../run_expr.py ../experiments/usedcars/all.json temp/usedcars/gt.json 
 
 NOTE: 
 - Replacing `../experiments/usedcars/all.json` (which was used to produce plots for the paper) with `../experiments/usedcars/all_fast.json` disables scoring function computation during the experiment and instead uses the cached scoring function values from the `./temp/usedcars/gt.json` file. 
-- This can be used to quickly verify the plots working for (STK/Precision) vs iteration, as well as the per-iteration overhead plots, but (STK/Precision) vs time plots and end-to-end latency plots will be off due to incorrect timings. 
+- This fast version can be used to quickly verify the plots working on a per-iteration basis, but plots where the x-axis is time will be off due to incorrect timings. 
 - The slow version may take 15~20 hours, hardware-dependent. 
-
-Expected files:
-- `./temp/usedcars/result.json`
 
 ### Create plots
 
@@ -127,7 +102,7 @@ Expected files:
 - `./temp/usedcars/usedcars_parameter_study.pdf` (Fig. 6c)
 
 NOTE: 
-- For the parameter study plot, the line labeled "OURS" is manually renamed to "F=0.01 (Default)" in the paper. 
+- In the paper, the line labeled "OURS" is manually renamed to "F=0.01 (Default)" since they are the same. 
 
 
 
@@ -136,10 +111,9 @@ NOTE:
 ### Process ImageNet data, build index
 
 Assumption: 
-- The ImageNet-1k dataset tarballs `ILSVRC2012_img_train.tar` and `ILSVRC2012_img_val.tar` are downloaded to some path. 
-This part cannot be automated due to the licensing. 
-- `imagenet_process.py` will unzip and format the images in a flat format for later scripts to use at `<imagenet-dir>`, which should have enough space to store the ImageNet train set as PNG files. 
-- `<imagenet-dir>` is separated from `./temp` intentionally since home drive of many systems do not have enough space to store ImageNet unzipped. 
+- The ImageNet-1k dataset tarballs `ILSVRC2012_img_train.tar` is downloaded to some path. This cannot be automated due to the licensing. 
+- `imagenet_process.py` will unzip and format a subset of the images as flat files for later scripts to use at `<imagenet-dir>`, which should have sufficient space. 
+- `<imagenet-dir>` is separated from `./temp` intentionally since the repo may be cloned to a small home drive, and `<imagenet-dir>` may have to be a larger storage drive. 
 
 ```bash
 echo <imagenet-dir> > temp/imagenet/dataset_location.txt
@@ -147,10 +121,9 @@ python ../index_builder/imagenet_process.py <imagenet-tarball> $(cat temp/imagen
 python ../index_builder/pixel_index_builder.py --dendrogram-file temp/imagenet/dendrogram.json --flattened-file temp/imagenet/flattened.json -k 25 --subsample-size 100000 --image-directory $(cat temp/imagenet/dataset_location.txt)  --time-file temp/imagenet/index_time.txt
 ```
 
-Expected files:
-- `<imagenet-dir>/0_0.png`, ...
-- `./temp/imagenet/dendrogram.json`
-- `./temp/imagenet/flattened.json`
+NOTE:
+- Substitute `<imagenet-dir>` with the path to the directory where you will save the ImageNet subset. 
+- Substitute `<imagenet-tarball>` with the path to the tarball in the second line. 
 
 ### Execute ground truth runs
 
@@ -161,15 +134,8 @@ python ../../run_gt.py <(sed "s|<imagenet-dir>|$(cat temp/imagenet/dataset_locat
 ```
 
 NOTE:
-- 437 is "beacon, lighthouse"; 590 is "hand-held computer"; 897 is "washing machine"
-
-Expected files:
-- `./temp/imagenet/437-sorted.json`
-- `./temp/imagenet/437-gt.json`
-- `./temp/imagenet/590-sorted.json`
-- `./temp/imagenet/590-gt.json`
-- `./temp/imagenet/897-sorted.json`
-- `./temp/imagenet/897-gt.json`
+- 437 is "beacon, lighthouse"; 590 is "hand-held computer"; 897 is "washing machine". 
+- Each label's ground truth, main experiment, and plotting scripts can be run independently from other labels. 
 
 ### Run main experiments
 
@@ -190,19 +156,10 @@ python ../../run_expr.py <(sed "s|<imagenet-dir>|$(cat temp/imagenet/dataset_loc
 ```
 
 NOTE:
-- The sed snippet in the commands replace occurrences of `<imagenet-dir>` with the path name cached to `./temp/imagenet/dataset_location.txt` earlier. 
-
-Expected files:
-- `./temp/imagenet/437-all.json`
-- `./temp/imagenet/590-all.json`
-- `./temp/imagenet/897-all.json`
+- The slow version took us 2 weeks to run all repetitions on a single GPU for each label. 
+- The fast versions are a much faster way to verify that per-iteration results hold up to the paper. Since objective function computation time dominates the runtime, per-iteration plots are very similar to per-time plots. 
 
 ### Main experiment plotting
-    parser.add_argument('--gt-file', type=str, required=True)
-    parser.add_argument('--result-file', type=str, required=True)
-    parser.add_argument('--output-dir', type=str, required=True)
-    parser.add_argument('--index-time-file', type=str, required=True)
-    parser.add_argument('--imagenet-class-id', type=int, required=True)
 
 ```bash
 python ../plots/plot_imagenet.py --gt-file temp/imagenet/437-gt.json --result-file temp/imagenet/437-all.json --output-dir temp/imagenet/ --index-time-file temp/imagenet/index_time.txt --imagenet-class-id 437
@@ -215,8 +172,8 @@ NOTE:
 - For the parameter study, "OURS" was manually renamed to "F=0.01, Batch=400 (Default)" for the paper. 
 
 Expected files:
-- `./temp/imagenet/imagenet_<class-id>_stk_vs_time.pdf` (Fig.7 a-c)
-- `./temp/imagenet/imagenet_<class-id>_precision_vs_time.pdf` (Fig.7 d-f)
+- `./temp/imagenet/imagenet_<class-id>_stk_vs_time.pdf` (Fig. 7a, 7b, 7c)
+- `./temp/imagenet/imagenet_<class-id>_precision_vs_time.pdf` (Fig. 7d, 7e, 7f)
 - `./temp/imagenet/imagenet_<class-id>_parameter_study.pdf` (Fig. 9)
 - `./temp/imagenet/imagenet_<class-id>_latency_iter.pdf` (Fig. 8c)
 - `./temp/imagenet/imagenet_<class-id>_latency_total.pdf` (Fig. 8b)

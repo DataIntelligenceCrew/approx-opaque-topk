@@ -17,10 +17,10 @@ USAGE: python run_expr.py <config_filename> <gt_result_filename> <output_filenam
 if __name__ == '__main__':
     # Parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("config_filename", type=str, help="Path to the configuration file")
-    parser.add_argument("gt_filename", type=str, help="Path to the ground truth result file")
-    parser.add_argument("output_filename", type=str, help="Path to the output file")
-    parser.add_argument("--max_threads", type=int, default=1, help="Maximum number of processes to use")
+    parser.add_argument("config_filename", type=str, help="Path to the experiment configuration file.")
+    parser.add_argument("gt_filename", type=str, help="Path to the ground truth result file.")
+    parser.add_argument("output_filename", type=str, help="Path to write the output file to.")
+    parser.add_argument("--max_threads", type=int, default=1, help="Maximum number of processes to use.")
     args = parser.parse_args()
 
     # Import config
@@ -40,7 +40,9 @@ if __name__ == '__main__':
     config_stats = dict()
 
     def run_single_experiment(rep, expr_config):
-        """Run a single repetition of the experiment."""
+        """
+        Run a single repetition of the experiment.
+        """
         run_result = approx_top_k_bandit(
             index_params=expr_config['index_params'],
             k=expr_config['k'],

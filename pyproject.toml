@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "approx-opaque-topk"
 version = "1.0.0"
-description = "Code for \"Approximating Opaque Top-k Queries\" by Chang and Nargesian."
+description = "Experimental code for \"Approximating Opaque Top-k Queries\" by Chang and Nargesian."
 requires-python = ">=3.8,<3.9"
 
 dependencies = [
@@ -52,8 +52,6 @@ dependencies = [
 ]
 
 [tool.uv]
-# Make PyPI primary, add the PyTorch CUDA wheels index, and allow searching
-# all indexes so uv won't get "stuck" on a numpy version from the first index.
 index-url = "https://pypi.org/simple"
 extra-index-url = ["https://download.pytorch.org/whl/cu118"]
 index-strategy = "unsafe-best-match"

@@ -3,7 +3,6 @@ import os
 import random
 import time
 
-#from k_means_constrained import KMeansConstrained
 import numpy as np
 from PIL import Image
 from typing import List, Tuple, Dict
@@ -179,6 +178,7 @@ if __name__ == '__main__':
     parser.add_argument('-k', type=int, required=True)
     parser.add_argument('--subsample-size', type=int, required=True)
     parser.add_argument('--image-directory', type=str, required=True)
+    parser.add_argument('--time-file', type=str, required=True)
     parser.add_argument('--seed', type=int, required=False, default=42)
     args = parser.parse_args()
     print("Parsed arguments", time.time() - start_time)
@@ -219,4 +219,6 @@ if __name__ == '__main__':
 
     end_time = time.time()
 
-    print("TOTAL TIME:", end_time - start_time)
+    total_time = end_time - start_time
+
+    open(args.time_file, 'w').write(str(total_time))

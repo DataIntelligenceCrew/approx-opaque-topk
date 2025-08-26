@@ -4,6 +4,7 @@ import random
 import time
 from tqdm import tqdm
 from typing import List, Callable, Union, Dict, Set, Any, Tuple
+from pathlib import Path
 
 import numpy as np
 
@@ -403,7 +404,7 @@ def termination_condition_is_met(budget: Union[int, float], itr: int) -> bool:
 
 def get_initialized_index(index_filename, sample_method, algo_params) -> Dict:
     # Load index from file
-    with open(index_filename, 'r') as file:
+    with open(Path.cwd() / index_filename, 'r') as file:
         index_dict: Dict = json.load(file)
 
     if sample_method == "reversescan":

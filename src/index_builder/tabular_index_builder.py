@@ -176,6 +176,8 @@ if __name__ == "__main__":
                         help="File path to save the dendrogram tree structure.")
     parser.add_argument("--flattened_file", type=str, required=True,
                         help="File path to save the single-node tree structure.")
+    parser.add_argument("--time_file", type=str, required=True,
+                        help="File path to save the index building time.")
     parser.add_argument("--subsample_size", type=int, required=True,
                         help="Number of rows to subsample for k-means clustering.")
     parser.add_argument("--id_column", type=str, required=True,
@@ -197,5 +199,6 @@ if __name__ == "__main__":
     )
 
     end_time = time.time()
+    total_time = end_time - start_time
 
-    print("TOTAL TIME:", end_time - start_time)
+    open(args.time_file, 'w').write(str(total_time))

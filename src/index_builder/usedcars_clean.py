@@ -1,10 +1,7 @@
-#!/usr/bin/env python3
-from __future__ import annotations
-
 import argparse
 import re
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -27,7 +24,7 @@ USEFUL_COLS: List[str] = BOOLEAN_COLS + NUMERIC_COLS + CATEGORICAL_COLS + SPECIA
 # Helpers
 # =========================
 
-def clean_numeric_scalar(value: object) -> float | np.floating | np.nan:
+def clean_numeric_scalar(value: object) -> Union[float, np.floating]:
     """
     Convert messy cell content to float.
     - '--' -> NaN
@@ -56,7 +53,7 @@ def to_float01_from_boolish(s: pd.Series) -> pd.Series:
     true_set = {"true", "1", "yes", "y", "t"}
     false_set = {"false", "0", "no", "n", "f"}
 
-    def _map(x: object) -> float | np.nan:
+    def _map(x: object) -> float:
         if isinstance(x, (int, np.integer)):
             return 1.0 if int(x) == 1 else (0.0 if int(x) == 0 else np.nan)
         if isinstance(x, float) and (x == 0.0 or x == 1.0):
@@ -72,7 +69,7 @@ def to_float01_from_boolish(s: pd.Series) -> pd.Series:
     return s.map(_map).astype("float64")
 
 
-def compute_stats(df: pd.DataFrame) -> Dict[str, Dict[str, float | str]]:
+def compute_stats(df: pd.DataFrame) -> Dict[str, Dict[str, Union[float, str]]]:
     """
     Compute per-column statistics for imputation.
     - numeric: mean
@@ -97,7 +94,7 @@ def compute_stats(df: pd.DataFrame) -> Dict[str, Dict[str, float | str]]:
     return stats
 
 
-def impute_inplace(df: pd.DataFrame, stats: Dict[str, Dict[str, float | str]]) -> None:
+def impute_inplace(df: pd.DataFrame, stats: Dict[str, Dict[str, Union[float, str]]]) -> None:
     """Impute numeric/boolean with mean; categorical with mode (in place)."""
     for col in NUMERIC_COLS:
         if col in df.columns and "mean" in stats.get(col, {}):

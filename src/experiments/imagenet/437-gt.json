@@ -10,7 +10,7 @@
   },
   "k": 1000,
   "index_params": {
-    "file": "<project-root>/approx-topk/Temp/Index/ImageNet/flattened-v4.json"
+    "file": "temp/imagenet/flattened.json"
   },
   "batch_size": 400
 }

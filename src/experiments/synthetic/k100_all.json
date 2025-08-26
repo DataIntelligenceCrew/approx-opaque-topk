@@ -1,5 +1,5 @@
 {
-    "ScanBestOrder": {
+  "ScanBestOrder": {
     "scoring_params": {
       "type": "relu",
       "delay": 0
@@ -14,7 +14,7 @@
     "reps": 25,
     "k": 100,
     "index_params": {
-      "file": "temp/synthetic/sorted.json"
+      "file": "temp/synthetic/k100_sorted.json"
     },
     "sample_method": "scan",
     "batch_size": 1,
@@ -38,7 +38,7 @@
     "reps": 25,
     "k": 100,
     "index_params": {
-      "file": "<project-root>/approx-topk/Temp/Index/Synthetic/sorted.json"
+      "file": "temp/synthetic/k100_sorted.json"
     },
     "sample_method": "reversescan",
     "batch_size": 1,
@@ -62,7 +62,7 @@
     "reps": 25,
     "k": 100,
     "index_params": {
-      "file": "<project-root>/approx-topk/Temp/Index/Synthetic/flattened.json"
+      "file": "temp/synthetic/flattened.json"
     },
     "sample_method": "noreplace",
     "batch_size": 1,
@@ -88,7 +88,7 @@
     "reps": 25,
     "k": 100,
     "index_params": {
-      "file": "<project-root>/approx-topk/Temp/Index/Synthetic/dendrogram.json"
+      "file": "temp/synthetic/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 1,
@@ -112,7 +112,7 @@
     "reps": 25,
     "k": 100,
     "index_params": {
-      "file": "<project-root>/approx-topk/Temp/Index/Synthetic/dendrogram.json"
+      "file": "temp/synthetic/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 1,
@@ -144,7 +144,7 @@
     "reps": 25,
     "k": 100,
     "index_params": {
-      "file": "<project-root>/approx-topk/Temp/Index/Synthetic/dendrogram.json"
+      "file": "temp/synthetic/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 1,
@@ -178,7 +178,7 @@
     "reps": 25,
     "k": 100,
     "index_params": {
-      "file": "<project-root>/approx-topk/Temp/Index/Synthetic/dendrogram.json"
+      "file": "temp/synthetic/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 1,
@@ -212,7 +212,7 @@
     "reps": 25,
     "k": 100,
     "index_params": {
-      "file": "<project-root>/approx-topk/Temp/Index/Synthetic/dendrogram.json"
+      "file": "temp/synthetic/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 1,
@@ -246,7 +246,7 @@
     "reps": 25,
     "k": 100,
     "index_params": {
-      "file": "<project-root>/approx-topk/Temp/Index/Synthetic/dendrogram.json"
+      "file": "temp/synthetic/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 1,

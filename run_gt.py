@@ -2,10 +2,11 @@ import argparse
 import json
 import time
 from typing import Dict, List, Tuple, Callable, Any
-from tqdm import tqdm  # Import tqdm for progress bar
+from tqdm import tqdm
+from pathlib import Path
 
-from src.bandit import get_sampler_from_params
-from src.bandit import get_scorer_from_params
+from src.bandit.samplers import get_sampler_from_params
+from src.bandit.scorers import get_scorer_from_params
 
 """
 The ground truth (gt) run over a particular query configuration simply scans over all data points while keeping track 
@@ -129,7 +130,8 @@ if __name__ == '__main__':
 
     # Save sorted index to sorted_index_file
     sorted_index_write_start_time = time.time()
-    with open(args.sorted_index_file, 'w') as file:
+
+    with open(Path.cwd() / args.sorted_index_file, 'w') as file:
         sorted_index = {
             'children': [x[1] for x in test_result['sorted_list']]
         }
@@ -139,7 +141,7 @@ if __name__ == '__main__':
     index_total_time = test_result['index_building_cpu_time'] + sorted_index_write_time
 
     # Save output to output_file
-    with open(args.output_file, 'w') as file:
+    with open(Path.cwd() / args.output_file, 'w') as file:
         gt_result = {
             'gt_solution': test_result['gt_solution'],
             'gt_rankings': test_result['gt_rankings'],

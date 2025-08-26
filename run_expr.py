@@ -4,9 +4,9 @@ from typing import Set, Dict, List
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
 
-from src.bandit import approx_top_k_bandit
-from src.bandit import get_sampler_from_params
-from src.bandit import get_scorer_from_params
+from src.bandit.bandit import approx_top_k_bandit
+from src.bandit.samplers import get_sampler_from_params
+from src.bandit.scorers import get_scorer_from_params
 
 """
 Runs an experiment with a config file as defined in expr_json_spec.

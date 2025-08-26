@@ -102,7 +102,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 400,
@@ -130,7 +130,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 400,
@@ -156,7 +156,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-flattened.json"
+      "file": "temp/imagenet/flattened.json"
     },
     "sample_method": "noreplace",
     "batch_size": 400,
@@ -184,7 +184,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 400,
@@ -218,7 +218,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 400,
@@ -254,7 +254,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 400,
@@ -290,7 +290,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 400,
@@ -326,7 +326,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 400,
@@ -362,7 +362,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 400,
@@ -398,7 +398,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 400,
@@ -432,7 +432,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 100,
@@ -468,7 +468,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 200,
@@ -504,7 +504,7 @@
     "reps": 10,
     "k": 1000,
     "index_params": {
-      "file": "temp/imagenet/437-dendrogram.json"
+      "file": "temp/imagenet/dendrogram.json"
     },
     "sample_method": "noreplace",
     "batch_size": 800,

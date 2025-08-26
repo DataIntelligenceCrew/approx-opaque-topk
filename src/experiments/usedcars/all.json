@@ -50,7 +50,7 @@
     },
     "sample_method": "scan",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": false
     }
@@ -78,7 +78,7 @@
     },
     "sample_method": "reversescan",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": false
     }
@@ -114,7 +114,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": true,
       "initial_threshold": 0.15,
@@ -144,7 +144,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": false
     }
@@ -172,7 +172,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": false
     }
@@ -202,7 +202,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": false
     }
@@ -238,7 +238,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": true,
       "initial_threshold": 0.15,
@@ -276,7 +276,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": true,
       "initial_threshold": 0.15,
@@ -314,7 +314,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": true,
       "initial_threshold": 0.15,
@@ -352,7 +352,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": true,
       "initial_threshold": 0.15,
@@ -390,7 +390,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": true,
       "initial_threshold": 0.15,
@@ -428,7 +428,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": true,
       "initial_threshold": 0.15,
@@ -466,7 +466,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": true,
       "initial_threshold": 0.15,
@@ -504,7 +504,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": true,
       "initial_threshold": 0.15,
@@ -542,7 +542,7 @@
     },
     "sample_method": "noreplace",
     "batch_size": 1,
-    "skip_scoring_fn": true,
+    "skip_scoring_fn": false,
     "fallback_params": {
       "enabled": false
     }

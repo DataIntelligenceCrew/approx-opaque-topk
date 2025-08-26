@@ -1,18 +1,18 @@
 {
   "scoring_params": {
     "type": "xgboost",
-    "model_path": "<project-root>/approx-topk/Temp/Models/usedcars_model.json",
+    "model_path": "temp/usedcars/usedcars_model.json",
     "exclude_cols": ["listing_id", "price"]
   },
   "sampling_params": {
     "type": "dataframe",
-    "file": "<project-root>/Data/UsedCars/used_cars_val.parquet",
+    "file": "temp/usedcars/used_cars_val.parquet",
     "id_col": "listing_id",
     "exclude_cols": ["price"]
   },
   "k": 250,
   "index_params": {
-    "file": "<project-root>/approx-topk/Temp/Index/UsedCars/flattened.json"
+    "file": "temp/usedcars/flattened.json"
   },
   "batch_size": 1
 }

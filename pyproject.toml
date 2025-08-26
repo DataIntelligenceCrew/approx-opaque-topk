@@ -49,6 +49,7 @@ dependencies = [
   "kagglehub==0.2.9",
   "pyarrow>=17.0.0",
   "huggingface-hub>=0.34.4",
+  "matplotlib>=3.7.5",
 ]
 
 [tool.uv]

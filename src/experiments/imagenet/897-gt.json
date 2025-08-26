@@ -1,0 +1,16 @@
+{
+  "scoring_params": {
+    "type": "classify",
+    "target_idx": 897,
+    "device": "cuda"
+  },
+  "sampling_params": {
+    "type": "image_directory",
+    "directory_path": "<imagenet-dir>"
+  },
+  "k": 1000,
+  "index_params": {
+    "file": "temp/imagenet/flattened.json"
+  },
+  "batch_size": 400
+}

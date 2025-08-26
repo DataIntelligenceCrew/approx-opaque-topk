@@ -1,11 +1,5 @@
-#!/usr/bin/env python3
 """
 Measure ResNeXt101_64x4d inference latency & memory vs batch size, then plot.
-
-Jargon:
-- "Amortized latency": elapsed time per image, i.e., (batch inference time / batch_size).
-- "Max GPU memory allocated": peak memory allocated by PyTorch on the selected CUDA device
-  during the measurement window. We reset caches between batches to keep measurements comparable.
 
 This script:
   1) Scans an image directory with files named "[class_idx]_[uid].png"
@@ -15,8 +9,6 @@ This script:
       - Captures maximum GPU memory allocated (MB)
   3) Saves results to CSV and creates a dual-axis plot: latency (ms) and memory (% of device)
 """
-
-from __future__ import annotations
 
 import argparse
 import gc
@@ -348,22 +340,6 @@ def measure_for_batch_size(
             torch.cuda.empty_cache()
         gc.collect()
 
-    # Summarize
-    amortized_latency_ms = float(np.mean(per_batch_ms)) if per_batch_ms else None
-    max_memory_mb = (observed_max_mem / (1024.0 ** 2)) if observed_max_mem > 0 else None
-
-    return MeasureResult(
-        batch_size=batch_size,
-        amortized_latency_ms=amortized_latency_ms,
-        max_memory_mb=max_memory_mb,
-        status=status,
-        note=note,
-    )
-
-
-# --------------------------------------------------------------------------------------
-# Plotting
-# --------------------------------------------------------------------------------------
 
 def make_plot(
     df: pd.DataFrame,

@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
 Name: approx-opaque-topk
 Version: 1.0.0
-Summary: Code for "Approximating Opaque Top-k Queries" by Chang and Nargesian.
+Summary: Experimental code for "Approximating Opaque Top-k Queries" by Chang and Nargesian.
 Requires-Python: <3.9,>=3.8
 Requires-Dist: numpy==1.24.3
 Requires-Dist: scipy==1.10.1

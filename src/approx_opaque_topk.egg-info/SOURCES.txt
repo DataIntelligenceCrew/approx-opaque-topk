@@ -22,5 +22,8 @@ src/index_builder/tabular_index_builder.py
 src/index_builder/usedcars_clean.py
 src/index_builder/usedcars_download.py
 src/index_builder/usedcars_train.py
+src/plots/plot_imagenet.py
+src/plots/plot_imagenet_batch_size.py
 src/plots/plot_synthetic.py
+src/plots/plot_usedcars.py
 src/plots/plotter.py

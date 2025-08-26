@@ -43,7 +43,7 @@ def main():
         x_axis='iteration',
         ylabel='Precision@K',
         xlabel='Iteration',
-        yrange=[0.75, 1.05],
+        yrange=(0.75, 1.05),
         filename=args.output_dir + 'synthetic_ablation_study.pdf',
         linewidth=2
     )

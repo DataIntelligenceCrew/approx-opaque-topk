@@ -1,5 +1,4 @@
 import argparse
-import json
 from plotter import *
 
 def main():
@@ -59,7 +58,7 @@ def main():
         xlabel='Time (s)',
         filename=args.output_dir + 'usedcars_ablation_study.pdf',
         linewidth=2,
-        yrange=[0.75, 1.05]
+        yrange=(0.75, 1.05)
     )
 
     # Overhead per iteration
@@ -83,7 +82,7 @@ def main():
         xlabel='Time (s)',
         filename=args.output_dir + 'usedcars_parameter_study.pdf',
         linewidth=2,
-        yrange=[0.75, 1.05]
+        yrange=(0.75, 1.05)
     )
 
 

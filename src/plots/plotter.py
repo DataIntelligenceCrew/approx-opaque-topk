@@ -2,7 +2,6 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Dict, List, Mapping, Optional, Sequence, Union, Tuple
-import re
 from pathlib import Path
 
 
@@ -145,7 +144,7 @@ METHODS = {
 
 
 def plot_metric_per_time_or_iter(result_stats: Dict,
-                                 order: Union[str, List[str], None],
+                                 order: List[str],
                                  metric: str,
                                  x_axis: str,
                                  y_log: bool = False,
@@ -178,11 +177,6 @@ def plot_metric_per_time_or_iter(result_stats: Dict,
     linewidth: The width of the lines in the plot.
     """
     plt.figure(figsize=(16, 10))
-
-    if order is None:
-        order = global_order
-    if isinstance(order, str):
-        order = method_collections[order]
 
     # Plot each config specified in order
     for config_name in order:
@@ -354,9 +348,7 @@ def compute_index_build_times(
     return build_times
 
 
-# --------------------------------------------------------------------------------------
-# Plot 1: TOTAL LATENCY (stacked: index build + algorithm runtime)
-# --------------------------------------------------------------------------------------
+# TOTAL LATENCY (stacked: index build + algorithm runtime)
 
 def plot_total_latency_stacked(
     result_stats: Mapping[str, Mapping[str, List[float]]],
@@ -500,9 +492,7 @@ def plot_total_latency_stacked(
     plt.show()
 
 
-# --------------------------------------------------------------------------------------
-# Plot 2: PER-ITERATION LATENCY (stacked breakdown)
-# --------------------------------------------------------------------------------------
+# PER-ITERATION LATENCY
 
 def plot_iter_latency_stacked(
     result_stats: Mapping[str, Mapping[str, float]],

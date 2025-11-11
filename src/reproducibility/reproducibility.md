@@ -49,7 +49,7 @@ python ../../run_expr.py ../experiments/synthetic/k100_all.json temp/synthetic/k
 ### Create plots
 
 ```bash
-python ../plots/plot_synthetic.py --result-file temp/synthetic/k100_all.json --output-dir temp/synthetic/
+python ../plots/plot_synthetic.py --result-file temp/synthetic/k100_result.json --output-dir temp/synthetic/
 ```
 
 Expected files:
@@ -94,8 +94,8 @@ python ../plots/plot_usedcars.py --gt-file temp/usedcars/gt.json --result-file t
 ```
 
 Expected files:
-- `./temp/usedcars/usedcars_stk_vs_time.pdf` (Fig. 5a)
-- `./temp/usedcars/usedcars_precision_vs_time.pdf` (Fig. 5b)
+- `./temp/usedcars/usedcars_stk_vs_time.pdf` (Fig. 5a) (+iteration variant)
+- `./temp/usedcars/usedcars_precision_vs_time.pdf` (Fig. 5b) (+iteration variant)
 - `./temp/usedcars/usedcars_latency_total.pdf` (Fig. 5c)
 - `./temp/usedcars/usedcars_ablation_study.pdf` (Fig. 6a)
 - `./temp/usedcars/usedcars_latency_iter.pdf` (Fig. 6b)

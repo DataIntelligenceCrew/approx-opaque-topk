@@ -1,7 +1,7 @@
 import argparse
 import re
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Union
 
 import numpy as np
 import pandas as pd

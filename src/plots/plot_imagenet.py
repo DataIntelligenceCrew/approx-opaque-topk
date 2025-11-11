@@ -25,6 +25,18 @@ def main():
         linewidth=2
     )
 
+    # STK vs Iter
+    plot_metric_per_time_or_iter(
+        result_stats=expr_results,
+        order=['ScanBestOrder', 'ScanWorstOrder', 'EpsGreedy', 'UCB', 'UniformExploration', 'UniformSample'],
+        metric='STK',
+        x_axis='iteration',
+        ylabel='Sum of Top-k (STK)',
+        xlabel='Iteration',
+        filename=args.output_dir + 'imagenet_' + str(args.imagenet_class_id) + '_stk_vs_time.pdf',
+        linewidth=2
+    )
+
     # Precision vs Time
     plot_metric_per_time_or_iter(
         result_stats=expr_results,
@@ -33,6 +45,18 @@ def main():
         x_axis='sec',
         ylabel='Precision@K',
         xlabel='Time (s)',
+        filename=args.output_dir + 'imagenet_' + str(args.imagenet_class_id) + '_precision_vs_time.pdf',
+        linewidth=2
+    )
+
+    # Precision vs Time
+    plot_metric_per_time_or_iter(
+        result_stats=expr_results,
+        order=['ScanBestOrder', 'ScanWorstOrder', 'EpsGreedy', 'UCB', 'UniformExploration', 'UniformSample'],
+        metric='Precision@K',
+        x_axis='iteration',
+        ylabel='Precision@K',
+        xlabel='Iteration',
         filename=args.output_dir + 'imagenet_' + str(args.imagenet_class_id) + '_precision_vs_time.pdf',
         linewidth=2
     )

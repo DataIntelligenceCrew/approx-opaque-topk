@@ -24,6 +24,18 @@ def main():
         linewidth=2
     )
 
+    # STK vs Iter
+    plot_metric_per_time_or_iter(
+        result_stats=expr_results,
+        order=['ScanBestOrder', 'ScanWorstOrder', 'EpsGreedy', 'UCB', 'UniformExploration', 'UniformSample'],
+        metric='STK',
+        x_axis='iteration',
+        ylabel='Sum of Top-k (STK)',
+        xlabel='Iteration',
+        filename=args.output_dir + 'usedcars_stk_vs_iter.pdf',
+        linewidth=2
+    )
+
     # Precision vs Time
     plot_metric_per_time_or_iter(
         result_stats=expr_results,
@@ -33,6 +45,18 @@ def main():
         ylabel='Precision@K',
         xlabel='Time (s)',
         filename=args.output_dir + 'usedcars_precision_vs_time.pdf',
+        linewidth=2
+    )
+
+    # Precision vs Iter
+    plot_metric_per_time_or_iter(
+        result_stats=expr_results,
+        order=['ScanBestOrder', 'ScanWorstOrder', 'EpsGreedy', 'UCB', 'UniformExploration', 'UniformSample'],
+        metric='Precision@K',
+        x_axis='iteration',
+        ylabel='Precision@K',
+        xlabel='Iteration',
+        filename=args.output_dir + 'usedcars_precision_vs_iter.pdf',
         linewidth=2
     )
 
